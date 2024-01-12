@@ -1,0 +1,62 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.1'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springCloudVersion', "2021.0.1")
+}
+
+dependencies {
+    implementation 'org.projectlombok:lombok:1.18.22'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.0' // 예시로 OkHttp 사용
+    implementation 'dev.ai4j:openai4j:0.12.1'
+    //implementation 'com.azure:azure-ai-openai:1.0.0-beta.6'
+    implementation "org.springframework.cloud:spring-cloud-starter-openfeign"
+    implementation "io.github.openfeign.form:feign-form:3.8.0"
+    implementation 'org.json:json:20211205'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // Hibernate
+    //implementation 'org.hibernate:hibernate-entitymanager:6.4.1.Final'
+    runtimeOnly 'com.h2database:h2'
+    implementation 'com.h2database:h2'
+
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+    implementation 'com.amazonaws:aws-java-sdk-s3'
+
+
+// H2 데이터베이스
+    //implementation 'com.h2database:h2:2.1.214'
+
+
+    implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
+
+
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}
+
+dependencyManagement {
+    imports {
+        //mavenBom "org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.0"
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -1,0 +1,36 @@
+openai:
+  key: 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
+
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    feign:
+      Logger: DEBUG
+
+spring:
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/kakao
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      #show-sql: true
+      format_sql: true
+    properties:
+      hibernate:
+        use_sql_comments: true
+
+
+cloud:
+  aws:
+    s3:
+      bucket: tutor-s3-bucket
+    stack.auto: false
+    region.static: ap-northeast-2
+    credentials:
+      accessKey: AKIAVRYLLLXHT4OZ5YY7
+      secretKey: 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
