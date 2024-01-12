@@ -32,4 +32,28 @@ public interface AssistantRepository extends JpaRepository<Assistant, String> {
     @Modifying
     @Query("delete from Assistant a where a.id = :id")
     void deleteAssistantById(@Param("id")String assistantId);
+
+    @Modifying
+    @Query("update Assistant a set a.description = :d where a.id = :id")
+    void updateAssistantDescriptionById(@Param("d")String description, @Param("id") String assistantId);
+
+    @Modifying
+    @Query("update Assistant a set a.instruction = :i where a.id = :id")
+    void updateAssistantInstructionById(@Param("i")String instructions, @Param("id") String assistantId);
+
+    @Modifying
+    @Query("update Assistant a set a.name = :name where a.id = :id")
+    void updateAssistantNameById(@Param("name")String name, @Param("id")String assistantId);
+
+    @Modifying
+    @Query("update Assistant a set a.personality = :p where a.id = :id")
+    void updateAssistantPersonalityById(@Param("p") Personality personality,@Param("id") String assistantId);
+
+    @Modifying
+    @Query("update Assistant a set a.speechLevel = :s where a.id = :id")
+    void updateAssistantSpeechLevelById(@Param("s") SpeechLevel speechLevel,@Param("id") String assistantId);
+
+    @Modifying
+    @Query("update Assistant a set a.hasFile = true where a.id = :id")
+    void updateAssistantHasFileById(@Param("id") String assistantId);
 }

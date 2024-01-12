@@ -17,13 +17,14 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class RealService {
     private final AssistantRepository assistantRepository;
-    @Transactional
+
     public void save(Assistant assistant) {
         assistantRepository.save(assistant);
     }
+    @Transactional(readOnly = true)
     public List<ShowHomeDto> findAll(){
         List<Assistant> all = assistantRepository.findAll();
         List<ShowHomeDto> res = new ArrayList<>();
@@ -33,25 +34,30 @@ public class RealService {
         }
         return res;
     }
+    @Transactional(readOnly = true)
     public Assistant findById(String assistantId){
         return assistantRepository.findById(assistantId).get();
     }
 
+    @Transactional(readOnly = true)
     public TutoringPageDto findByIdInTutoringPage(String assistantId) {
         Assistant findOne = assistantRepository.findById(assistantId).get();
         return new TutoringPageDto(findOne.getName(), findOne.getDescription());
     }
 
+    @Transactional(readOnly = true)
     public TutorInfoDto getTutorInfo(String assistantId){
         Assistant findOne = assistantRepository.findById(assistantId).get();
         return new TutorInfoDto(findOne.getName(), findOne.getImg(), findOne.getDescription(), findOne.getPersonality(),findOne.getSpeechLevel(),findOne.getVoice());
     }
 
     //튜터 수정 화면에 뿌려지는 정보
+    @Transactional(readOnly = true)
     public TutorModifyDto getTutorInfoToModify(String assistantId){
         Assistant findOne = assistantRepository.findById(assistantId).get();
         return new TutorModifyDto(findOne.getName(), findOne.getImg(), findOne.getDescription(), findOne.getPersonality(),findOne.getSpeechLevel(),findOne.getVoice(), findOne.getInstruction());
     }
+    @Transactional(readOnly = true)
     public String getAssistantVoice(String assistantId){
         Assistant findOne = assistantRepository.findById(assistantId).get();
         Voice voice = findOne.getVoice();
@@ -59,28 +65,47 @@ public class RealService {
         else return "alloy";
     }
 
-    public void modify(String assistantId, String personality, String speechLevel, String voice) {
 
-        Personality p = Personality.valueOf(personality);
-        SpeechLevel s = SpeechLevel.valueOf(speechLevel);
-        Voice v = Voice.valueOf(voice);
-
-        assistantRepository.updateOptions(assistantId, p, s, v);
+    public void modifyAssistantPersonality(Personality personality, String assistantId){
+        assistantRepository.updateAssistantPersonalityById(personality, assistantId);
     }
 
 
-    @Transactional
+
     public void modifyAssistantImg(String assistantId, String img) {
         assistantRepository.updateAssistantImgById(assistantId, img);
     }
 
-    @Transactional
+
     public void deleteAssistant(String assistantId) {
         assistantRepository.deleteAssistantById(assistantId);
     }
 
-    @Transactional
+
     public void setHasFileTrue(Assistant findOne) {
         findOne.setHasFileTure();
+    }
+
+
+    public void modifyAssistantName(String name, String assistantId) {
+        assistantRepository.updateAssistantNameById(name, assistantId);
+    }
+
+
+    public void modifyAssistantDescription(String description, String assistantId) {
+        assistantRepository.updateAssistantDescriptionById(description, assistantId);
+    }
+
+
+    public void modifyAssistantInstruction(String instructions, String assistantId) {
+        assistantRepository.updateAssistantInstructionById(instructions, assistantId);
+    }
+
+    public void modifyAssistantSpeechLevel(SpeechLevel speechLevel, String assistantId) {
+        assistantRepository.updateAssistantSpeechLevelById(speechLevel, assistantId);
+    }
+
+    public void modifyAssistantHasFile(String assistantId) {
+        assistantRepository.updateAssistantHasFileById(assistantId);
     }
 }

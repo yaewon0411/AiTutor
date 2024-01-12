@@ -17,6 +17,7 @@ import org.example.Assistant.dto.ModifyRequestDto;
 import org.example.service.AssistantService;
 import org.example.service.FileService;
 import org.example.service.S3Service;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -198,23 +199,77 @@ public class RealController {
 
 
     //파일 없다가 추가하는 경우도 생각해야 함
-    // 어시스턴트 수정하기 버튼 클릭 + 어시스턴트에 넣은 파일 삭제하기. 기존 정보에서 달라진 게 없으면 알아서 프론트에서 이거 못 날리게 막도록
+    // 어시스턴트 수정하기 버튼 클릭 + 어시스턴트에 넣은 파일 삭제하기. 기존 정보에서 달라진 게 없으면 알아서 프론트에서 이거 못 날리게 막도록 가능?
     //어시스턴트 이미지도 수정헀을 때 반영되도록 해야 함
-    @PostMapping("/modify/assistant/{assistantId}")
-    public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @RequestBody ModifyRequestDto modifyRequestDto) throws IOException {
+    //어시스턴트 수정
+    //1) openAI 수정
+    //2) DB 수정
 
-        //instruction, description, 기존에 있던 파일 삭제
-        ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
-        realService.modify(assistantId, modifyRequestDto.getPersonality(), modifyRequestDto.getSpeechLevel(),modifyRequestDto.getVoice());
+    //변경된 필드에 대해서만 변수 날려줄 수 있는 지 프론트에 물어보기.....
+    @PostMapping("/assistant/{assistantId}/modify")
+    public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @RequestBody ModifyRequestDto modifyRequestDto) throws IOException, JSONException {
+
+
         Assistant findOne = realService.findById(assistantId);
+        String setInstruction = "";
 
-        //어시스턴트에 새로 파일이 추가되는 경우
-        if((modifyRequestDto.getFilePath() != null) && !findOne.isHasFile()){
-            for (String filePath : modifyRequestDto.getFilePath()) {
-                fileService.uploadFile(filePath);
-            }
-            realService.setHasFileTrue(findOne);
+        //튜터 성향에 관한 수정 사항 검증
+        Personality personality = findOne.getPersonality();
+        SpeechLevel speechLevel = findOne.getSpeechLevel();
+        if(!personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstructions(), personality.toString(), speechLevel.toString());
+            modifyRequestDto.setInstructions(setInstruction);
+            realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
+            realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
         }
+        else if(!personality.equals(modifyRequestDto.getPersonality()) && speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstructions(), personality.toString(), findOne.getSpeechLevel().toString());
+            modifyRequestDto.setInstructions(setInstruction);
+            realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
+        }
+        else if(personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstructions(), findOne.getPersonality().toString(), speechLevel.toString());
+            modifyRequestDto.setInstructions(setInstruction);
+            realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
+        }
+
+        //이름 변경 검증
+        if(!modifyRequestDto.getName().equals(findOne.getName())){
+            realService.modifyAssistantName(modifyRequestDto.getName(), assistantId);
+        }
+        //description 변경 검증
+        if(!modifyRequestDto.getDescription().equals(findOne.getDescription())){
+            realService.modifyAssistantDescription(modifyRequestDto.getDescription(), assistantId);
+        }
+        //instruction 변경 검증
+        if(!modifyRequestDto.getInstructions().equals(findOne.getInstruction())){
+            realService.modifyAssistantInstruction(modifyRequestDto.getInstructions(), assistantId);
+        }
+        //파일 변경 검증
+        if(modifyRequestDto.getFilePath() != null){ //새로 들어오는 파일 경로가 있으면
+            for (String filePath : modifyRequestDto.getFilePath()) {
+                ResponseEntity<String> response = fileService.uploadFile(filePath);
+                String fileId = fileService.getFileId(response);
+                //수정하면서 업로드된 파일 아이디 어시스턴트 수정 요청 dto에 넣기
+                modifyRequestDto.getFileIds().add(fileId);
+            }
+            //hasFile = true 설정
+            realService.modifyAssistantHasFile(assistantId);
+        } else{ //새로 들어오는 파일 경로가 없으면 -> 삭제된 거 있나 확인
+
+            ResponseEntity<Object> response = assistantService.searchAssistant(assistantId);
+            JSONObject object = new JSONObject(response.getBody());
+            List<String> fileIds =  (List<String>) object.get("file_ids");
+
+            if(fileIds.size()>0){
+                for (String fileId : fileIds) {
+                    fileService.deleteFile(fileId);
+                }
+            }
+        }
+
+        //최종 어시스턴트 수정
+        ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
         return ResponseEntity.ok(res);
     }
 
@@ -237,8 +292,6 @@ public class RealController {
 
 
     //어시스턴트 삭제하기
-    //수정 사항 : 나갈 때 전체 응답 정보가 나감 수정할 것
-    //삭제하면서 버킷에 있는 이미지도 삭제하도록 추가
     @PostMapping("/delete/assistant/{assistantId}")
     public ResponseEntity<Object> deleteAssistant(@PathVariable("assistantId") String assistantId) throws MalformedURLException {
         //어시스턴트에 붙은 파일 있는 지 먼저 검사
@@ -246,7 +299,7 @@ public class RealController {
         if(assistantService.hasFile(assistant)!=null){
              List<String> fileIdList = assistantService.getFileIdList(assistant);
              for (String fileId : fileIdList) {
-                 //OpenAI 서버에 있는 파일 삭제
+                 //OpenAI 서버에 있는 파일 삭제 (어시스턴트에서도 당연히 파일 삭제)
                  fileService.deleteFile(fileId);
              }
         }

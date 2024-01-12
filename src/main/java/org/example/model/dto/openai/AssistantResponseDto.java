@@ -18,7 +18,7 @@ public class AssistantResponseDto {
     private String instructions;
     private List<Tool> tools;
     @JsonProperty("file_ids")
-    private Object fileIds; // Object 타입으로 변경
+    private List<String> fileIds; // Object 타입으로 변경
     private Object metadata; // Object 타입으로 변경
 
     @Data

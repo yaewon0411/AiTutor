@@ -1,7 +1,18 @@
-/build/
-/out/
+.gradle
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+target/
+build/
+out/
 
 src/main/resources/application.yml
 src/main/java/org/example/header/AssistantHeaderConfiguration.java
 src/main/java/org/example/header/FileHeaderConfiguration.java
 src/main/java/org/example/config
+
+*.log
+*.tmp
