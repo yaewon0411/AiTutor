@@ -8,6 +8,7 @@
 target/
 build/
 out/
+gradle/
 
 application.yml
 AssistantHeaderConfiguration.java
