@@ -47,7 +47,7 @@ public class RealController {
     public ResponseEntity<Object> createAssistant(
             @RequestParam("personality")String personality, @RequestParam("speechLevel")String speechLevel,
             @RequestParam("voice")String voice, @RequestParam("name")String name, @RequestParam("instruction")String instruction,
-            @RequestParam("description")String description, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file1") String file1, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file2") String file2, @RequestParam("imgFile")MultipartFile file) throws IOException {
+            @RequestParam("description")String description, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file1") MultipartFile file1, @JsonInclude(JsonInclude.Include.NON_NULL) @RequestParam("file2") MultipartFile file2, @RequestParam("imgFile")MultipartFile file) throws IOException {
 
         //튜터 성향 뽑아서 instruction에 넣기
         String setInstruction = assistantService.setInstruction(instruction, personality, speechLevel);
@@ -61,13 +61,13 @@ public class RealController {
         //등록된 파일 있으면 먼저 서버에 저장
         if(file1 != null){
             hasFile = true;
-            ResponseEntity<String> response = fileService.uploadFile(file1);
+            ResponseEntity<Object> response = fileService.uploadFile(file1);
             String fileId = fileService.getFileId(response);
             assistantCreateDto.setTools(Arrays.asList(
                     new Tool("code_interpreter")));
             assistantCreateDto.getFileIds().add(fileId);
             if(file2!=null){
-                ResponseEntity<String> response2 = fileService.uploadFile(file2);
+                ResponseEntity<Object> response2 = fileService.uploadFile(file2);
                 String fileId2 = fileService.getFileId(response2);
                 assistantCreateDto.getFileIds().add(fileId2);
             }
@@ -115,7 +115,8 @@ public class RealController {
         String fileId = "";
         //입력한 파일이 있으면
         if(getMessageDto.getFilePath() != null){
-            ResponseEntity<String> response = fileService.uploadFile(getMessageDto.getFilePath());
+            MultipartFile file = fileService.convertFileToMultipartFile(getMessageDto.getFilePath());
+            ResponseEntity<Object> response = fileService.uploadFile(file);
             fileId = fileService.getFileId(response);
         }
         ArrayList<String> fileIds = new ArrayList<>();
@@ -246,7 +247,8 @@ public class RealController {
         //파일 변경 검증
         if(modifyRequestDto.getFilePath() != null){ //새로 들어오는 파일 경로가 있으면
             for (String filePath : modifyRequestDto.getFilePath()) {
-                ResponseEntity<String> response = fileService.uploadFile(filePath);
+                MultipartFile file = fileService.convertFileToMultipartFile(filePath);
+                ResponseEntity<Object> response = fileService.uploadFile(file);
                 String fileId = fileService.getFileId(response);
                 //수정하면서 업로드된 파일 아이디 어시스턴트 수정 요청 dto에 넣기
                 modifyRequestDto.getFileIds().add(fileId);

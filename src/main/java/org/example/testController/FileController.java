@@ -6,8 +6,11 @@ import org.example.service.FileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 
 @RestController
@@ -16,16 +19,10 @@ public class FileController {
 
     private final FileService fileService;
 
-    /*
     @PostMapping("/file")
-    public ResponseEntity<String> uploadFile(@RequestBody FilePathDto filePathDto) throws IOException {
-        return fileService.uploadFile(filePathDto.getPath());
+    public ResponseEntity<Object> uploadFile(@RequestParam("purpose") String purpose, @RequestParam("file") MultipartFile file) throws IOException {
+        return fileService.uploadFile(file);
     }
-     */
 
-    @PostMapping("/file")
-    public ResponseEntity<Object> uploadFileByFeign(@RequestBody FilePathDto filePathDto) throws IOException {
-        return fileService.uploadFileByFeign(filePathDto);
-    }
 
 }

@@ -58,12 +58,9 @@ public class FileService {
         }
     }
 
-    public ResponseEntity<Object> uploadFileByFeign(FilePathDto dto){
+    public ResponseEntity<Object> uploadFile(MultipartFile file){
         try {
-            //String filePath = "C:/Users/admin/Desktop/study/실전! 스프링부트와 JPA 활용2 - API 개발과 성능 최적화v2023-06-14.pdf";
-            String filePath = dto.getPath();
-            MultipartFile file = convertFileToMultipartFile(filePath);
-            Object res = fileClient.uploadFile("assistants", file);
+            Object res = fileClient.uploadFile(new FilePathDto(file, "assistants"));
             return ResponseEntity.ok(res);
         }catch (Exception e){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -71,42 +68,12 @@ public class FileService {
     }
 
 
-    public String getFileId(ResponseEntity<String> response){
+    public String getFileId(ResponseEntity<Object> response){
 
         JSONObject object = new JSONObject(response.getBody());
         return object.getString("id");
     }
 
-    public ResponseEntity<String> uploadFile(String path) throws IOException {
-
-        //String Path = "C:/Users/admin/Desktop/study/실전! 스프링부트와 JPA 활용2 - API 개발과 성능 최적화v2023-06-14.pdf";
-
-        System.out.println("path = " + path);
-
-        File file = new File(path);
-        if (!file.exists()) {
-            throw new FileNotFoundException("File not found at path: " + path);
-        }
-        FileSystemResource fileResource = new FileSystemResource(new File(path));
-
-        // 헤더 설정 (Authorization 포함)
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        headers.set("Authorization", "Bearer " + OPENAI_API_KEY);
-
-        // 멀티파트 요청 바디 구성
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", fileResource);
-        body.add("purpose", "assistants");
-
-        // Http 요청 엔티티 생성
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-        // 요청 전송
-        ResponseEntity<String> response = restTemplate.exchange(UPLOAD_URL, HttpMethod.POST, requestEntity, String.class);
-
-        return response;
-    }
     public MultipartFile convertFileToMultipartFile(String filePath) throws IOException{
         Path path = Paths.get(filePath);
         String fileName = path.getFileName().toString();
@@ -168,3 +135,5 @@ public class FileService {
         }
     }
 }
+
+
