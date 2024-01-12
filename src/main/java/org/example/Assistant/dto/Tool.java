@@ -1,4 +1,4 @@
-package org.example.model.dto.openai;
+package org.example.Assistant.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
