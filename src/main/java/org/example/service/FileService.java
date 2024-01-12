@@ -35,11 +35,6 @@ import java.util.Objects;
 public class FileService {
 
     private final FileClient fileClient;
-    private final RestTemplate restTemplate = new RestTemplate();
-    private static final String UPLOAD_URL = "https://api.openai.com/v1/files";
-
-    @Value("${openai.key}")
-    private String OPENAI_API_KEY;
 
     public ResponseEntity<Object> searchFile(String fileId){
         try{
@@ -66,7 +61,6 @@ public class FileService {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 
     public String getFileId(ResponseEntity<Object> response){
 
