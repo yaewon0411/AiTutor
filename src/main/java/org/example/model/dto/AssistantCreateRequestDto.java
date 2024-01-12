@@ -2,11 +2,10 @@ package org.example.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.model.dto.openai.Tool;
+import org.example.Assistant.dto.Tool;
 
 import java.util.ArrayList;
 import java.util.List;

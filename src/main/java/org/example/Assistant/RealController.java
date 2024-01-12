@@ -6,14 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.example.Assistant.Enum.Personality;
 import org.example.Assistant.Enum.SpeechLevel;
 import org.example.Assistant.Enum.Voice;
-import org.example.Assistant.dto.TutorInfoDto;
-import org.example.Assistant.dto.TutorMessageDto;
-import org.example.Assistant.dto.TutorModifyDto;
-import org.example.Assistant.dto.TutoringPageDto;
+import org.example.Assistant.dto.*;
 import org.example.model.dto.*;
 import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.*;
-import org.example.Assistant.dto.ModifyRequestDto;
 import org.example.service.AssistantService;
 import org.example.service.FileService;
 import org.example.service.S3Service;
@@ -68,7 +64,7 @@ public class RealController {
             ResponseEntity<String> response = fileService.uploadFile(file1);
             String fileId = fileService.getFileId(response);
             assistantCreateDto.setTools(Arrays.asList(
-                    new Tool("code_interpreter"), new Tool("retrieval")));
+                    new Tool("code_interpreter")));
             assistantCreateDto.getFileIds().add(fileId);
             if(file2!=null){
                 ResponseEntity<String> response2 = fileService.uploadFile(file2);
@@ -108,7 +104,7 @@ public class RealController {
     //스레드 생성하기
     @PostMapping("/assistant/create/thread")
     public ResponseEntity<Object> createThread(){
-         return assistantService.createThreads();
+        return ResponseEntity.ok(assistantService.createThreads().getBody());
     }
 
     //메시지 보내고 답변 받기 - 파일(사진 등)으로도 질문하는 경우로 수정
@@ -172,10 +168,9 @@ public class RealController {
     }
 
     //채팅방 나갈 때 쓰레드 제거
-    @PostMapping("/assistant/delete/thread/{threadId}")
+    @DeleteMapping("/assistant/delete/thread/{threadId}")
     public ResponseEntity<Object> deleteThread(@PathVariable("threadId")String threadId){
-        ResponseEntity<Object> res = assistantService.deleteThreads(threadId);
-        return res;
+        return ResponseEntity.ok(assistantService.deleteThreads(threadId));
     }
 
     //생성한 어시스턴트 수정 화면에 진입 - 저장된 정보 불러오기
@@ -205,10 +200,8 @@ public class RealController {
     //1) openAI 수정
     //2) DB 수정
 
-    //변경된 필드에 대해서만 변수 날려줄 수 있는 지 프론트에 물어보기.....
-    @PostMapping("/assistant/{assistantId}/modify")
+    @PutMapping("/assistant/{assistantId}/modify")
     public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @RequestBody ModifyRequestDto modifyRequestDto) throws IOException, JSONException {
-
 
         Assistant findOne = realService.findById(assistantId);
         String setInstruction = "";
@@ -217,22 +210,21 @@ public class RealController {
         Personality personality = findOne.getPersonality();
         SpeechLevel speechLevel = findOne.getSpeechLevel();
         if(!personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstructions(), personality.toString(), speechLevel.toString());
-            modifyRequestDto.setInstructions(setInstruction);
+            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), personality.toString(), speechLevel.toString());
+            modifyRequestDto.setInstruction(setInstruction);
             realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
             realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
         }
         else if(!personality.equals(modifyRequestDto.getPersonality()) && speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstructions(), personality.toString(), findOne.getSpeechLevel().toString());
-            modifyRequestDto.setInstructions(setInstruction);
+            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), personality.toString(), findOne.getSpeechLevel().toString());
+            modifyRequestDto.setInstruction(setInstruction);
             realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
         }
         else if(personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstructions(), findOne.getPersonality().toString(), speechLevel.toString());
-            modifyRequestDto.setInstructions(setInstruction);
+            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), findOne.getPersonality().toString(), speechLevel.toString());
+            modifyRequestDto.setInstruction(setInstruction);
             realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
         }
-
         //이름 변경 검증
         if(!modifyRequestDto.getName().equals(findOne.getName())){
             realService.modifyAssistantName(modifyRequestDto.getName(), assistantId);
@@ -242,8 +234,14 @@ public class RealController {
             realService.modifyAssistantDescription(modifyRequestDto.getDescription(), assistantId);
         }
         //instruction 변경 검증
-        if(!modifyRequestDto.getInstructions().equals(findOne.getInstruction())){
-            realService.modifyAssistantInstruction(modifyRequestDto.getInstructions(), assistantId);
+        if(!modifyRequestDto.getInstruction().equals(findOne.getInstruction())){
+            realService.modifyAssistantInstruction(modifyRequestDto.getInstruction(), assistantId);
+            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), personality.toString(), findOne.getSpeechLevel().toString());
+            modifyRequestDto.setInstruction(setInstruction);
+        }
+        //voice 변경 검증
+        if(!modifyRequestDto.getVoice().equals(findOne.getVoice())){
+            realService.modifyAssistantVoice(modifyRequestDto.getVoice(), assistantId);
         }
         //파일 변경 검증
         if(modifyRequestDto.getFilePath() != null){ //새로 들어오는 파일 경로가 있으면
@@ -255,6 +253,8 @@ public class RealController {
             }
             //hasFile = true 설정
             realService.modifyAssistantHasFile(assistantId);
+            modifyRequestDto.setTools(Arrays.asList(
+                    new Tool("code_interpreter")));
         } else{ //새로 들어오는 파일 경로가 없으면 -> 삭제된 거 있나 확인
 
             ResponseEntity<Object> response = assistantService.searchAssistant(assistantId);
@@ -292,7 +292,7 @@ public class RealController {
 
 
     //어시스턴트 삭제하기
-    @PostMapping("/delete/assistant/{assistantId}")
+    @DeleteMapping("/delete/assistant/{assistantId}")
     public ResponseEntity<Object> deleteAssistant(@PathVariable("assistantId") String assistantId) throws MalformedURLException {
         //어시스턴트에 붙은 파일 있는 지 먼저 검사
         ResponseEntity<Object> assistant = assistantService.searchAssistant(assistantId);
@@ -313,7 +313,7 @@ public class RealController {
 
         //어시스턴트 최종 삭제
         ResponseEntity<Object> res = assistantService.deleteAssistant(assistantId);
-        return ResponseEntity.ok("success-delete");
+        return ResponseEntity.ok(res.getBody());
     }
 
 

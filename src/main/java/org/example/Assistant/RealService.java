@@ -108,4 +108,8 @@ public class RealService {
     public void modifyAssistantHasFile(String assistantId) {
         assistantRepository.updateAssistantHasFileById(assistantId);
     }
+
+    public void modifyAssistantVoice(Voice voice, String assistantId) {
+        assistantRepository.updateAssistantVoiceById(voice, assistantId);
+    }
 }

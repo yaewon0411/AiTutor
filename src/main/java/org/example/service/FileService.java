@@ -9,6 +9,7 @@ import org.example.model.dto.file.FilePathDto;
 import org.example.model.dto.file.FileResponseDto;
 import org.json.HTTP;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,8 @@ public class FileService {
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String UPLOAD_URL = "https://api.openai.com/v1/files";
 
-    private static final String OPENAI_API_KEY = "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";
+    @Value("${openai.key}")
+    private String OPENAI_API_KEY;
 
     public ResponseEntity<Object> searchFile(String fileId){
         try{

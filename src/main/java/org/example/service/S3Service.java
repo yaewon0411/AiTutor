@@ -24,7 +24,7 @@ public class S3Service {
     @Value("${cloud.aws.region.static}")
     private String region;
 
-    //S3에 이미지 업로드하고, 저장된 경로 반환 - 이거 수정해야함/ 일단 위에 있는 upload로 이용
+
     public String uploadImage(MultipartFile file){
         String keyName = "uploads/"+file.getOriginalFilename();
         ObjectMetadata metadata = new ObjectMetadata();

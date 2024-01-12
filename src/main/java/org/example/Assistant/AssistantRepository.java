@@ -21,9 +21,6 @@ public interface AssistantRepository extends JpaRepository<Assistant, String> {
     @Override
     Optional<Assistant> findById(String assistantId);
 
-    @Modifying
-    @Query("update Assistant a set a.personality = :personality, a.speechLevel = :speechLevel, a.voice = :voice where a.id = :id")
-    void updateOptions(@Param("id")String id, @Param("personality")Personality personality, @Param("speechLevel")SpeechLevel speechLevel, @Param("voice")Voice voice);
 
     @Modifying
     @Query("update Assistant a set a.img = :img where a.id = :id")
@@ -56,4 +53,8 @@ public interface AssistantRepository extends JpaRepository<Assistant, String> {
     @Modifying
     @Query("update Assistant a set a.hasFile = true where a.id = :id")
     void updateAssistantHasFileById(@Param("id") String assistantId);
+
+    @Modifying
+    @Query("update Assistant a set a.voice = :v where a.id = :id")
+    void updateAssistantVoiceById(@Param("v") Voice voice,@Param("id") String assistantId);
 }

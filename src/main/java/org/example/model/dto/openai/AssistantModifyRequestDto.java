@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.Assistant.dto.Tool;
 
 import java.util.List;
 
@@ -16,5 +17,7 @@ public class AssistantModifyRequestDto {
     @JsonProperty("file_ids")
     private Object fileIds;
     private String description;
+    private List<Tool> tools;
+    private String name;
 
 }

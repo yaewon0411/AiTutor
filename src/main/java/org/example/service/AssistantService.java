@@ -55,10 +55,12 @@ public class AssistantService {
         try{
             Object res = assistantsClient.modifyAssistant(assistantId,
                     new AssistantModifyRequestDto(
-                            assistantModifyRequestDto.getInstructions(),
+                            assistantModifyRequestDto.getInstruction(),
                             assistantModel,
                             assistantModifyRequestDto.getFileIds(),
-                            assistantModifyRequestDto.getDescription()
+                            assistantModifyRequestDto.getDescription(),
+                            assistantModifyRequestDto.getTools(),
+                            assistantModifyRequestDto.getName()
                     ));
             return ResponseEntity.ok(res);
         }catch (Exception e){
@@ -210,6 +212,7 @@ public class AssistantService {
 
     public String getAssistantId(ResponseEntity<Object> assistantObject) {
         JSONObject object = new JSONObject(Objects.requireNonNull(assistantObject.getBody()));
+        System.out.println("object.toString() = " + object.toString());
         return object.getString("id");
     }
 
@@ -235,8 +238,9 @@ public class AssistantService {
     }
 
     public Object hasFile(ResponseEntity<Object> assistant) {;
-        JSONObject jsonObject = new JSONObject(Objects.requireNonNull(assistant.getBody()));
-        return jsonObject.get("fileIds");
+        JSONObject jsonObject = new JSONObject((assistant.getBody()));
+        System.out.println("jsonObject.toString() = " + jsonObject.toString());
+        return jsonObject.get("file_ids");
     }
     public List<String> getFileIdList(ResponseEntity<Object> assistant){
 
