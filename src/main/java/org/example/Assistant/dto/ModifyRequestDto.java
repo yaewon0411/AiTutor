@@ -12,6 +12,8 @@ import java.util.List;
 
 @Data@NoArgsConstructor
 public class ModifyRequestDto {
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String instruction;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -19,6 +21,7 @@ public class ModifyRequestDto {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<String> fileIds = new ArrayList<>();
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<Tool> tools = new ArrayList<>();
 
@@ -28,12 +31,16 @@ public class ModifyRequestDto {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<String> filePath = new ArrayList<>();
 
-
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String name;
 
-
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Personality personality;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private SpeechLevel speechLevel;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Voice voice;
 
 }

@@ -13,8 +13,10 @@ import org.example.model.dto.openai.*;
 import org.example.service.AssistantService;
 import org.example.service.FileService;
 import org.example.service.S3Service;
+import org.h2.util.json.JSONValidationTargetWithoutUniqueKeys;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.aop.scope.ScopedProxyUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,12 +47,12 @@ public class RealController {
     //어시스턴트 생성 : 등록한 파일이 있으면 먼저 서버에 저장 -> 파일 아이디 프론트에서 저장 -> (파일 있으면) 어시스턴트 code_interpreter로 생성하고 파일 넣기 -> 생성 완료
     @PostMapping("/create/assistant")
     public ResponseEntity<Object> createAssistant(
-            @RequestParam("personality")String personality, @RequestParam("speechLevel")String speechLevel,
-            @RequestParam("voice")String voice, @RequestParam("name")String name, @RequestParam("instruction")String instruction,
+            @RequestParam("personality") Personality personality, @RequestParam("speechLevel") SpeechLevel speechLevel,
+            @RequestParam("voice")Voice voice, @RequestParam("name")String name, @RequestParam("instruction")String instruction,
             @RequestParam("description")String description, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file1") MultipartFile file1, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file2") MultipartFile file2, @RequestParam("imgFile")MultipartFile file) throws IOException {
 
         //튜터 성향 뽑아서 instruction에 넣기
-        String setInstruction = assistantService.setInstruction(instruction, personality, speechLevel);
+        String setInstruction = assistantService.setInstruction(instruction, personality.toString(), speechLevel.toString());
         boolean hasFile = false;
 
         AssistantCreateRequestDto assistantCreateDto = new AssistantCreateRequestDto();
@@ -81,7 +83,7 @@ public class RealController {
 
         //db에 어시스턴트 insert
         Assistant assistant = new Assistant(assistantId, name, imgUrl, description, instruction, hasFile,
-                Personality.valueOf(personality), SpeechLevel.valueOf(speechLevel), Voice.valueOf(voice));
+                personality, speechLevel, voice);
         realService.save(assistant);
 
         return ResponseEntity.ok(assistantObject);
@@ -210,22 +212,89 @@ public class RealController {
         //튜터 성향에 관한 수정 사항 검증
         Personality personality = findOne.getPersonality();
         SpeechLevel speechLevel = findOne.getSpeechLevel();
-        if(!personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+
+        //instruction 변경 검증
+        if(!modifyRequestDto.getInstruction().equals(findOne.getInstruction())){
+            System.out.println("instruction 변경");
+            realService.modifyAssistantInstruction(modifyRequestDto.getInstruction(), assistantId);
+            //setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), findOne.getPersonality().toString(), findOne.getSpeechLevel().toString());
+            //modifyRequestDto.setInstruction(setInstruction);
+
+            //personality, speechLevel 둘 다 수정된 경우
+            if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+                System.out.println("첫 번째 조건문 걸림");
+                setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), modifyRequestDto.getPersonality().toString(), modifyRequestDto.getSpeechLevel().toString());
+                modifyRequestDto.setInstruction(setInstruction);
+                realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
+                realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
+            }
+            //personality만 수정된 경우
+            else if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+                System.out.println("두 번째 조건문 걸림");
+                setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), modifyRequestDto.getPersonality().toString(), speechLevel.toString());
+                modifyRequestDto.setInstruction(setInstruction);
+                realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
+            }
+            //speechLevel만 수정된 경우
+            else if(personality != null && speechLevel != null && personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+                System.out.println("세 번째 조건문 걸림");
+                setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), personality.toString(), modifyRequestDto.getSpeechLevel().toString());
+                modifyRequestDto.setInstruction(setInstruction);
+                realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
+            }
+        } else{ //insturction이 변경 안 된 경우
+            //personality, speechLevel 둘 다 수정된 경우
+            if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+                System.out.println("첫 번째 조건문 걸림");
+                setInstruction = assistantService.setInstruction(findOne.getInstruction(), modifyRequestDto.getPersonality().toString(), modifyRequestDto.getSpeechLevel().toString());
+                modifyRequestDto.setInstruction(setInstruction);
+                realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
+                realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
+            }
+            //personality만 수정된 경우
+            else if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+                System.out.println("두 번째 조건문 걸림");
+                setInstruction = assistantService.setInstruction(findOne.getInstruction(), modifyRequestDto.getPersonality().toString(), speechLevel.toString());
+                modifyRequestDto.setInstruction(setInstruction);
+                realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
+            }
+            //speechLevel만 수정된 경우
+            else if(personality != null && speechLevel != null && personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+                System.out.println("세 번째 조건문 걸림");
+                setInstruction = assistantService.setInstruction(findOne.getInstruction(), personality.toString(), modifyRequestDto.getSpeechLevel().toString());
+                modifyRequestDto.setInstruction(setInstruction);
+                realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
+            }
+
+        }
+
+        //personality, speechLevel 둘 다 수정된 경우
+        if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+            System.out.println("첫 번째 조건문 걸림");
             setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), personality.toString(), speechLevel.toString());
             modifyRequestDto.setInstruction(setInstruction);
             realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
             realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
         }
-        else if(!personality.equals(modifyRequestDto.getPersonality()) && speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+        //personality만 수정된 경우
+        else if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+            System.out.println("두 번째 조건문 걸림");
             setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), personality.toString(), findOne.getSpeechLevel().toString());
             modifyRequestDto.setInstruction(setInstruction);
             realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
         }
-        else if(personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+        //speechLevel만 수정된 경우
+        else if(personality != null && speechLevel != null && personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
+            System.out.println("세 번째 조건문 걸림");
             setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), findOne.getPersonality().toString(), speechLevel.toString());
             modifyRequestDto.setInstruction(setInstruction);
             realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
         }
+
+
+
+
+
         //이름 변경 검증
         if(!modifyRequestDto.getName().equals(findOne.getName())){
             realService.modifyAssistantName(modifyRequestDto.getName(), assistantId);
@@ -234,14 +303,8 @@ public class RealController {
         if(!modifyRequestDto.getDescription().equals(findOne.getDescription())){
             realService.modifyAssistantDescription(modifyRequestDto.getDescription(), assistantId);
         }
-        //instruction 변경 검증
-        if(!modifyRequestDto.getInstruction().equals(findOne.getInstruction())){
-            realService.modifyAssistantInstruction(modifyRequestDto.getInstruction(), assistantId);
-            setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), personality.toString(), findOne.getSpeechLevel().toString());
-            modifyRequestDto.setInstruction(setInstruction);
-        }
         //voice 변경 검증
-        if(!modifyRequestDto.getVoice().equals(findOne.getVoice())){
+        if(!findOne.getVoice().equals(modifyRequestDto.getVoice())){
             realService.modifyAssistantVoice(modifyRequestDto.getVoice(), assistantId);
         }
         //파일 변경 검증

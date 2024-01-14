@@ -274,6 +274,6 @@ public class AssistantService {
     }
 
     public String setInstruction(String instruction, String personality, String speechLevel) {
-        return instruction + "\n답변할 때 "+personality+"하게 답변 해주세요.\n 당신은 또한 "+speechLevel+"하게 답변합니다.";
+        return instruction + "\n *지침 : 답변할 때 "+personality+"하게 답변 해주세요.\n 당신은 또한 "+speechLevel+"하게 답변합니다.";
     }
 }
