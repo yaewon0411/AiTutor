@@ -239,8 +239,7 @@ public class AssistantService {
 
     public Object hasFile(ResponseEntity<Object> assistant) {;
         JSONObject jsonObject = new JSONObject((assistant.getBody()));
-        System.out.println("jsonObject.toString() = " + jsonObject.toString());
-        return jsonObject.get("file_ids");
+        return jsonObject.get("fileIds");
     }
     public List<String> getFileIdList(ResponseEntity<Object> assistant){
 

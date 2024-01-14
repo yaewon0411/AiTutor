@@ -47,7 +47,7 @@ public class RealController {
     public ResponseEntity<Object> createAssistant(
             @RequestParam("personality")String personality, @RequestParam("speechLevel")String speechLevel,
             @RequestParam("voice")String voice, @RequestParam("name")String name, @RequestParam("instruction")String instruction,
-            @RequestParam("description")String description, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file1") MultipartFile file1, @JsonInclude(JsonInclude.Include.NON_NULL) @RequestParam("file2") MultipartFile file2, @RequestParam("imgFile")MultipartFile file) throws IOException {
+            @RequestParam("description")String description, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file1") MultipartFile file1, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file2") MultipartFile file2, @RequestParam("imgFile")MultipartFile file) throws IOException {
 
         //튜터 성향 뽑아서 instruction에 넣기
         String setInstruction = assistantService.setInstruction(instruction, personality, speechLevel);
