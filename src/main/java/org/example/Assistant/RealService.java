@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.Assistant.Enum.Personality;
 import org.example.Assistant.Enum.SpeechLevel;
 import org.example.Assistant.Enum.Voice;
-import org.example.Assistant.dto.ShowHomeDto;
-import org.example.Assistant.dto.TutorInfoDto;
-import org.example.Assistant.dto.TutorModifyDto;
-import org.example.Assistant.dto.TutoringPageDto;
+import org.example.Assistant.dto.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -111,5 +108,15 @@ public class RealService {
 
     public void modifyAssistantVoice(Voice voice, String assistantId) {
         assistantRepository.updateAssistantVoiceById(voice, assistantId);
+    }
+
+    public List<ShowHomeDto> searchByKeyword(String keyword){
+        List<Assistant> assistants = assistantRepository.searchByKeyword(keyword);
+        List<ShowHomeDto> showHomeDtoList = new ArrayList<>();
+        for (Assistant assistant : assistants) {
+            ShowHomeDto searchDto = new ShowHomeDto(assistant.getName(), assistant.getImg(),assistant.getId());
+            showHomeDtoList.add(searchDto);
+        }
+        return showHomeDtoList;
     }
 }

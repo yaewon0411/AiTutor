@@ -212,7 +212,6 @@ public class RealController {
         Personality personality = findOne.getPersonality();
         SpeechLevel speechLevel = findOne.getSpeechLevel();
 
-
         //instruction 변경 검증
         if(!modifyRequestDto.getInstruction().equals(findOne.getInstruction())){
             System.out.println("instruction 변경");
@@ -359,5 +358,13 @@ public class RealController {
         ResponseEntity<Object> res = assistantService.deleteAssistant(assistantId);
         return ResponseEntity.ok(res.getBody());
     }
+
+    //검색
+    @GetMapping("/search")
+    public ResponseEntity<Object> search(@RequestParam("keyword")String keyword){
+        List<ShowHomeDto> showHomeDtoList = realService.searchByKeyword(keyword);
+        return ResponseEntity.ok(showHomeDtoList);
+    }
+
 
 }

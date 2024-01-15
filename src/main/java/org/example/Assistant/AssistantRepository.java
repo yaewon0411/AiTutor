@@ -57,4 +57,8 @@ public interface AssistantRepository extends JpaRepository<Assistant, String> {
     @Modifying
     @Query("update Assistant a set a.voice = :v where a.id = :id")
     void updateAssistantVoiceById(@Param("v") Voice voice,@Param("id") String assistantId);
+
+    @Query("select a from Assistant a where a.name like %:keyword% or a.description like %:keyword%")
+    List<Assistant> searchByKeyword(@Param("keyword")String keyword);
+
 }
