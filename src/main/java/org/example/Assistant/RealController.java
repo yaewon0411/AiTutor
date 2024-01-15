@@ -205,12 +205,12 @@ public class RealController {
 
         Assistant findOne = realService.findById(assistantId);
         String setInstruction = "";
+        System.out.println("modifyRequestDto.toString() = " + modifyRequestDto.toString());
+        System.out.println("modifyRequestDto.getFile2() = " + modifyRequestDto.getFile2());
 
         //튜터 성향에 관한 수정 사항 검증
         Personality personality = findOne.getPersonality();
         SpeechLevel speechLevel = findOne.getSpeechLevel();
-
-        System.out.println("modifyRequestDto = " + modifyRequestDto.toString());
 
 
         //instruction 변경 검증
@@ -286,11 +286,13 @@ public class RealController {
         }
         //파일 변경 검증
         if(modifyRequestDto.getFile1() != null){ //새로 들어오는 파일 경로가 있으면
-                String fileId = fileService.getFileId(fileService.uploadFile(modifyRequestDto.getFile1()));
+            ResponseEntity<Object> response = fileService.uploadFile(modifyRequestDto.getFile1());
+            String fileId = fileService.getFileId(response);
                 //수정하면서 업로드된 파일 아이디 dto에 넣기
                 modifyRequestDto.getFileIds().add(fileId);
                 if(modifyRequestDto.getFile2() != null){
-                    String fileId2 = fileService.getFileId(fileService.uploadFile(modifyRequestDto.getFile2()));
+                    ResponseEntity<Object> response2 = fileService.uploadFile(modifyRequestDto.getFile2());
+                    String fileId2 = fileService.getFileId(response2);
                     modifyRequestDto.getFileIds().add(fileId2);
             }
             //hasFile = true 설정
@@ -357,8 +359,5 @@ public class RealController {
         ResponseEntity<Object> res = assistantService.deleteAssistant(assistantId);
         return ResponseEntity.ok(res.getBody());
     }
-
-
-
 
 }
