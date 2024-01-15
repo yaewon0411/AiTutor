@@ -39,13 +39,13 @@ public class RealController {
     private final S3Service s3Service;
 
     //홈 화면 - 어시스턴트 리스트
-    @GetMapping("/home")
+    @GetMapping("/")
     public ResponseEntity<Object> home(){
         return ResponseEntity.ok(realService.findAll());
     }
 
     //어시스턴트 생성 : 등록한 파일이 있으면 먼저 서버에 저장 -> 파일 아이디 프론트에서 저장 -> (파일 있으면) 어시스턴트 code_interpreter로 생성하고 파일 넣기 -> 생성 완료
-    @PostMapping("/create")
+    @PostMapping("/assistants")
     public ResponseEntity<Object> createAssistant(
             @RequestParam("personality") Personality personality, @RequestParam("speechLevel") SpeechLevel speechLevel,
             @RequestParam("voice")Voice voice, @RequestParam("name")String name, @RequestParam("instruction")String instruction,
@@ -90,27 +90,27 @@ public class RealController {
     }
 
     //튜터링 화면 - 상세 정보
-    @GetMapping("/assistant/{assistantId}/info")
+    @GetMapping("/assistants/{assistantId}/info")
     public ResponseEntity<Object> tutoringInfo(@PathVariable("assistantId")String assistantId){
         TutorInfoDto res = realService.getTutorInfo(assistantId);
         return ResponseEntity.ok(res);
     }
 
     //튜터링 화면 - 채팅방 진입
-    @GetMapping("/assistant/{assistantId}/chat")
+    @GetMapping("/assistants/{assistantId}/chat")
     public ResponseEntity<Object> tutoringPage(@PathVariable("assistantId")String assistantId){
         TutoringPageDto res = realService.findByIdInTutoringPage(assistantId);
         return ResponseEntity.ok(res);
     }
 
     //스레드 생성하기
-    @PostMapping("/assistant/thread/create")
+    @PostMapping("/assistants/threads")
     public ResponseEntity<Object> createThread(){
         return ResponseEntity.ok(assistantService.createThreads().getBody());
     }
 
     //메시지 보내고 답변 받기 - 파일(사진 등)으로도 질문하는 경우로 수정
-    @PostMapping("/assistant/{threadId}/get/message")
+    @PostMapping("/assistants/{threadId}/chat")
     public ResponseEntity<Object> getMessage(@PathVariable("threadId") String threadId, @RequestBody getMessageDto getMessageDto
     ) throws IOException {
 
@@ -171,13 +171,13 @@ public class RealController {
     }
 
     //채팅방 나갈 때 쓰레드 제거
-    @DeleteMapping("/assistant/thread/{threadId}/delete")
+    @DeleteMapping("/assistants/threads/{threadId}")
     public ResponseEntity<Object> deleteThread(@PathVariable("threadId")String threadId){
         return ResponseEntity.ok(assistantService.deleteThreads(threadId));
     }
 
     //생성한 어시스턴트 수정 화면에 진입 - 저장된 정보 불러오기
-    @GetMapping("/assistant/{assistantId}/modify")
+    @GetMapping("/assistants/{assistantId}/info/page")
     public ResponseEntity<Object> tutorModifyPage(@PathVariable("assistantId")String assistantId){
 
         List <String> fileNames = new ArrayList<>();
@@ -203,7 +203,7 @@ public class RealController {
     //1) openAI 수정
     //2) DB 수정
 
-    @PutMapping("/assistant/{assistantId}/modify")
+    @PutMapping("/assistants/{assistantId}/info/page")
     public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @RequestBody ModifyRequestDto modifyRequestDto) throws IOException, JSONException {
 
         Assistant findOne = realService.findById(assistantId);
@@ -318,7 +318,7 @@ public class RealController {
 
 
     //사용자가 튜터 이미지를 변경했을 때만 작돟하도록 프론트에서 설정
-    @PostMapping("/assistant/{assistantId}/image/modify")
+    @PutMapping("/assistants/{assistantId}/info/page/image")
     public ResponseEntity<Object> modifyAssistantImage(@PathVariable("assistantId")String assistantId,@RequestParam("imgFile")MultipartFile file ) throws MalformedURLException {
 
         Assistant findOne = realService.findById(assistantId);
@@ -335,7 +335,7 @@ public class RealController {
 
 
     //어시스턴트 삭제하기
-    @DeleteMapping("/assistant/{assistantId}/delete")
+    @DeleteMapping("/assistants/{assistantId}")
     public ResponseEntity<Object> deleteAssistant(@PathVariable("assistantId") String assistantId) throws MalformedURLException {
         //어시스턴트에 붙은 파일 있는 지 먼저 검사
         ResponseEntity<Object> assistant = assistantService.searchAssistant(assistantId);
