@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class ShowHomeDto {
     public String name;
     public String img;
+    public String assistantId;
 }

@@ -1,6 +1,7 @@
 package org.example.Assistant.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.Assistant.Enum.Personality;
@@ -31,7 +32,13 @@ public class ModifyRequestDto {
     //추가한 파일 경로
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<MultipartFile> filePath = new ArrayList<>();
+    @Nullable
+    private MultipartFile file1;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Nullable
+    private MultipartFile file2;
+
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String name;

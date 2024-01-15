@@ -11,4 +11,5 @@ public class TutoringPageDto {
 
     private String name;
     private String description;
+    private String imgFile;
 }

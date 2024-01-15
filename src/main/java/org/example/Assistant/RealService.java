@@ -29,7 +29,7 @@ public class RealService {
         List<Assistant> all = assistantRepository.findAll();
         List<ShowHomeDto> res = new ArrayList<>();
         for (Assistant assistant : all) {
-            ShowHomeDto dto = new ShowHomeDto(assistant.getName(), assistant.getImg());
+            ShowHomeDto dto = new ShowHomeDto(assistant.getName(), assistant.getImg(), assistant.getId());
             res.add(dto);
         }
         return res;
@@ -42,7 +42,7 @@ public class RealService {
     @Transactional(readOnly = true)
     public TutoringPageDto findByIdInTutoringPage(String assistantId) {
         Assistant findOne = assistantRepository.findById(assistantId).get();
-        return new TutoringPageDto(findOne.getName(), findOne.getDescription());
+        return new TutoringPageDto(findOne.getName(), findOne.getDescription(), findOne.getImg());
     }
 
     @Transactional(readOnly = true)

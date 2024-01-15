@@ -201,7 +201,7 @@ public class RealController {
     //2) DB 수정
 
     @PutMapping("/assistants/{assistantId}/info/page")
-    public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws IOException, JSONException {
+    public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws JSONException {
 
         Assistant findOne = realService.findById(assistantId);
         String setInstruction = "";
@@ -285,13 +285,13 @@ public class RealController {
             realService.modifyAssistantVoice(modifyRequestDto.getVoice(), assistantId);
         }
         //파일 변경 검증
-        if(modifyRequestDto.getFilePath() != null){ //새로 들어오는 파일 경로가 있으면
-            for (MultipartFile file : modifyRequestDto.getFilePath()) {
-                //MultipartFile file = fileService.convertFileToMultipartFile(filePath);
-                ResponseEntity<Object> response = fileService.uploadFile(file);
-                String fileId = fileService.getFileId(response);
-                //수정하면서 업로드된 파일 아이디 어시스턴트 수정 요청 dto에 넣기
+        if(modifyRequestDto.getFile1() != null){ //새로 들어오는 파일 경로가 있으면
+                String fileId = fileService.getFileId(fileService.uploadFile(modifyRequestDto.getFile1()));
+                //수정하면서 업로드된 파일 아이디 dto에 넣기
                 modifyRequestDto.getFileIds().add(fileId);
+                if(modifyRequestDto.getFile2() != null){
+                    String fileId2 = fileService.getFileId(fileService.uploadFile(modifyRequestDto.getFile2()));
+                    modifyRequestDto.getFileIds().add(fileId2);
             }
             //hasFile = true 설정
             realService.modifyAssistantHasFile(assistantId);
