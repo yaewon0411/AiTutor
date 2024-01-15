@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nullable;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class getMessageDto {
@@ -13,5 +14,5 @@ public class getMessageDto {
     private String isVoice;
     @Nullable
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String filePath;
+    private MultipartFile file;
 }

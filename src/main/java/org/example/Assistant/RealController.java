@@ -109,14 +109,13 @@ public class RealController {
 
     //메시지 보내고 답변 받기 - 파일(사진 등)으로도 질문하는 경우로 수정
     @PostMapping("/assistants/{threadId}/chat")
-    public ResponseEntity<Object> getMessage(@PathVariable("threadId") String threadId, @RequestBody getMessageDto getMessageDto
+    public ResponseEntity<Object> getMessage(@PathVariable("threadId") String threadId, @ModelAttribute getMessageDto getMessageDto
     ) throws IOException {
 
         String fileId = "";
         //입력한 파일이 있으면
-        if(getMessageDto.getFilePath() != null){
-            MultipartFile file = fileService.convertFileToMultipartFile(getMessageDto.getFilePath());
-            ResponseEntity<Object> response = fileService.uploadFile(file);
+        if(getMessageDto.getFile() != null){
+            ResponseEntity<Object> response = fileService.uploadFile(getMessageDto.getFile());
             fileId = fileService.getFileId(response);
         }
         ArrayList<String> fileIds = new ArrayList<>();
