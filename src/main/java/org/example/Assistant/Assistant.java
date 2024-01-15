@@ -1,6 +1,7 @@
 package org.example.Assistant;
 
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import lombok.*;
 import org.example.Assistant.Enum.Personality;
 import org.example.Assistant.Enum.SpeechLevel;
@@ -19,6 +20,7 @@ public class Assistant {
     private String name;
     @Column(name="assistant_img")
     private String img;
+    //512자로 제한하는 거 걸기
     private String description;
     private String instruction;
 
