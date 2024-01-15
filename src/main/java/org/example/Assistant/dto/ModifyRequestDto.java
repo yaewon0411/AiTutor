@@ -29,8 +29,6 @@ public class ModifyRequestDto {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String description;
     //추가한 파일 경로
-//    @JsonInclude(JsonInclude.Include.NON_NULL)
-//    private List<String> filePath = new ArrayList<>();
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<MultipartFile> filePath = new ArrayList<>();

@@ -31,6 +31,7 @@ import java.util.Objects;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin
 public class RealController {
 
     private final AssistantService assistantService;
@@ -39,7 +40,7 @@ public class RealController {
     private final S3Service s3Service;
 
     //홈 화면 - 어시스턴트 리스트
-    @GetMapping("/home")
+    @GetMapping("/")
     public ResponseEntity<Object> home(){
         return ResponseEntity.ok(realService.findAll());
     }
