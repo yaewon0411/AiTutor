@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.example.Assistant.Enum.Personality;
 import org.example.Assistant.Enum.SpeechLevel;
 import org.example.Assistant.Enum.Voice;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +29,11 @@ public class ModifyRequestDto {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String description;
     //추가한 파일 경로
+//    @JsonInclude(JsonInclude.Include.NON_NULL)
+//    private List<String> filePath = new ArrayList<>();
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<String> filePath = new ArrayList<>();
+    private List<MultipartFile> filePath = new ArrayList<>();
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String name;

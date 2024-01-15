@@ -39,51 +39,48 @@ public class RealController {
     private final S3Service s3Service;
 
     //홈 화면 - 어시스턴트 리스트
-    @GetMapping("/")
+    @GetMapping("/home")
     public ResponseEntity<Object> home(){
         return ResponseEntity.ok(realService.findAll());
     }
 
     //어시스턴트 생성 : 등록한 파일이 있으면 먼저 서버에 저장 -> 파일 아이디 프론트에서 저장 -> (파일 있으면) 어시스턴트 code_interpreter로 생성하고 파일 넣기 -> 생성 완료
     @PostMapping("/assistants")
-    public ResponseEntity<Object> createAssistant(
-            @RequestParam("personality") Personality personality, @RequestParam("speechLevel") SpeechLevel speechLevel,
-            @RequestParam("voice")Voice voice, @RequestParam("name")String name, @RequestParam("instruction")String instruction,
-            @RequestParam("description")String description, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file1") MultipartFile file1, @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable @RequestParam("file2") MultipartFile file2, @RequestParam("imgFile")MultipartFile file) throws IOException {
+    public ResponseEntity<Object> createAssistant(@ModelAttribute AssistantCreateDto assistantCreateDto) throws IOException {
 
         //튜터 성향 뽑아서 instruction에 넣기
-        String setInstruction = assistantService.setInstruction(instruction, personality.toString(), speechLevel.toString());
+        String setInstruction = assistantService.setInstruction(assistantCreateDto.getInstruction(), assistantCreateDto.getPersonality().toString(), assistantCreateDto.getSpeechLevel().toString());
         boolean hasFile = false;
 
-        AssistantCreateRequestDto assistantCreateDto = new AssistantCreateRequestDto();
-        assistantCreateDto.setName(name);
-        assistantCreateDto.setInstruction(setInstruction);
-        assistantCreateDto.setDescription(description);
+        AssistantCreateRequestDto AIassistantCreateDto = new AssistantCreateRequestDto();
+        AIassistantCreateDto.setName(assistantCreateDto.getName());
+        AIassistantCreateDto.setInstruction(setInstruction);
+        AIassistantCreateDto.setDescription(assistantCreateDto.getDescription());
 
         //등록된 파일 있으면 먼저 서버에 저장
-        if(file1 != null){
+        if(assistantCreateDto.getFile1() != null){
             hasFile = true;
-            ResponseEntity<Object> response = fileService.uploadFile(file1);
+            ResponseEntity<Object> response = fileService.uploadFile(assistantCreateDto.getFile1());
             String fileId = fileService.getFileId(response);
-            assistantCreateDto.setTools(Arrays.asList(
+            AIassistantCreateDto.setTools(Arrays.asList(
                     new Tool("code_interpreter")));
-            assistantCreateDto.getFileIds().add(fileId);
-            if(file2!=null){
-                ResponseEntity<Object> response2 = fileService.uploadFile(file2);
+            AIassistantCreateDto.getFileIds().add(fileId);
+            if(assistantCreateDto.getFile2()!=null){
+                ResponseEntity<Object> response2 = fileService.uploadFile(assistantCreateDto.getFile2());
                 String fileId2 = fileService.getFileId(response2);
-                assistantCreateDto.getFileIds().add(fileId2);
+                AIassistantCreateDto.getFileIds().add(fileId2);
             }
         }
         //어시스턴트 생성
-        ResponseEntity<Object> assistantObject = assistantService.createAssistant(assistantCreateDto);
+        ResponseEntity<Object> assistantObject = assistantService.createAssistant(AIassistantCreateDto);
         String assistantId = assistantService.getAssistantId(assistantObject);
 
         //이미지 버킷에 저장하고 저장된 경로 반환
-        String imgUrl = s3Service.uploadImage(file);
+        String imgUrl = s3Service.uploadImage(assistantCreateDto.getImgFile());
 
         //db에 어시스턴트 insert
-        Assistant assistant = new Assistant(assistantId, name, imgUrl, description, instruction, hasFile,
-                personality, speechLevel, voice);
+        Assistant assistant = new Assistant(assistantId, assistantCreateDto.getName(), imgUrl, assistantCreateDto.getDescription(), assistantCreateDto.getInstruction(), hasFile,
+                assistantCreateDto.getPersonality(), assistantCreateDto.getSpeechLevel(), assistantCreateDto.getVoice());
         realService.save(assistant);
 
         return ResponseEntity.ok(assistantObject);
@@ -204,7 +201,7 @@ public class RealController {
     //2) DB 수정
 
     @PutMapping("/assistants/{assistantId}/info/page")
-    public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @RequestBody ModifyRequestDto modifyRequestDto) throws IOException, JSONException {
+    public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws IOException, JSONException {
 
         Assistant findOne = realService.findById(assistantId);
         String setInstruction = "";
@@ -212,6 +209,8 @@ public class RealController {
         //튜터 성향에 관한 수정 사항 검증
         Personality personality = findOne.getPersonality();
         SpeechLevel speechLevel = findOne.getSpeechLevel();
+
+        System.out.println("modifyRequestDto = " + modifyRequestDto.toString());
 
 
         //instruction 변경 검증
@@ -287,8 +286,8 @@ public class RealController {
         }
         //파일 변경 검증
         if(modifyRequestDto.getFilePath() != null){ //새로 들어오는 파일 경로가 있으면
-            for (String filePath : modifyRequestDto.getFilePath()) {
-                MultipartFile file = fileService.convertFileToMultipartFile(filePath);
+            for (MultipartFile file : modifyRequestDto.getFilePath()) {
+                //MultipartFile file = fileService.convertFileToMultipartFile(filePath);
                 ResponseEntity<Object> response = fileService.uploadFile(file);
                 String fileId = fileService.getFileId(response);
                 //수정하면서 업로드된 파일 아이디 어시스턴트 수정 요청 dto에 넣기
