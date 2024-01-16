@@ -1,12 +1,10 @@
-package org.example.header;
+package org.example.openAI;
 
 import org.example.model.dto.audio.AudioRequestDto;
-import org.example.model.dto.audio.AudioResponseDto;
 import org.example.model.dto.openai.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.cloud.openfeign.FeignClient;
-import retrofit2.http.Path;
 
 
 @FeignClient(name = "OpenAiAssistantsClient", url = "https://api.openai.com/v1", configuration = AssistantHeaderConfiguration.class)

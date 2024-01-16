@@ -2,7 +2,7 @@ package org.example.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.example.header.AssistantsClient;
+import org.example.openAI.AssistantsClient;
 import org.example.model.dto.*;
 import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.*;

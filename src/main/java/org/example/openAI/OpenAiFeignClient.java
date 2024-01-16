@@ -1,4 +1,4 @@
-package org.example.header;
+package org.example.openAI;
 
 
 import org.example.model.dto.openai.ChatRequestDto;

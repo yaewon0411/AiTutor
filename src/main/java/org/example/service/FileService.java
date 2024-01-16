@@ -1,34 +1,20 @@
 package org.example.service;
 
-import lombok.AllArgsConstructor;
-import lombok.Generated;
 import lombok.RequiredArgsConstructor;
-import okhttp3.Response;
-import org.example.header.FileClient;
+import org.example.openAI.FileClient;
 import org.example.model.dto.file.FilePathDto;
-import org.example.model.dto.file.FileResponseDto;
-import org.json.HTTP;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
