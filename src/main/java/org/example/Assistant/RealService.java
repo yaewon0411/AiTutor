@@ -58,8 +58,8 @@ public class RealService {
     public String getAssistantVoice(String assistantId){
         Assistant findOne = assistantRepository.findById(assistantId).get();
         Voice voice = findOne.getVoice();
-        if(voice.toString().equals("Female")) return "nova";
-        else return "alloy";
+        if(voice.toString().equals("Female")) return "shimmer";
+        else return "onyx";
     }
 
 

@@ -100,13 +100,11 @@ public class RealController {
         TutoringPageDto res = realService.findByIdInTutoringPage(assistantId);
         return ResponseEntity.ok(res);
     }
-
     //스레드 생성하기
     @PostMapping("/assistants/threads")
     public ResponseEntity<Object> createThread(){
         return ResponseEntity.ok(assistantService.createThreads().getBody());
     }
-
     //메시지 보내고 답변 받기 - 파일(사진 등)으로도 질문하는 경우로 수정
     @PostMapping("/assistants/{threadId}/chat")
     public ResponseEntity<Object> getMessage(@PathVariable("threadId") String threadId, @ModelAttribute getMessageDto getMessageDto
@@ -159,7 +157,7 @@ public class RealController {
             //byte[] speech = assistantService.createSpeech2(new AudioRequestDto(chatDto.getAnswer()));
             System.out.println("음성 인터페이스 전환");
             String voice = realService.getAssistantVoice(getMessageDto.getAssistantId());
-            ResponseEntity<Object> speech = assistantService.createSpeech(new AudioRequestDto(chatDto.getAnswer(), voice));
+            ResponseEntity<Object> speech = assistantService.createSpeech(new AudioRequestDto(chatDto.getAnswer()), voice);
             TutorMessageDto res = new TutorMessageDto(chatDto, speech);
             return ResponseEntity.ok(res);
         }
@@ -298,7 +296,6 @@ public class RealController {
                 }
             }
         }
-
         //최종 어시스턴트 수정
         ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
         return ResponseEntity.ok(res);
@@ -306,7 +303,7 @@ public class RealController {
 
     //사용자가 튜터 이미지를 변경했을 때만 작돟하도록 프론트에서 설정
     @PutMapping("/assistants/{assistantId}/info/page/image")
-    public ResponseEntity<Object> modifyAssistantImage(@PathVariable("assistantId")String assistantId,@RequestParam("imgFile")MultipartFile file ) throws MalformedURLException {
+    public ResponseEntity<Object> modifyAssistantImage(@PathVariable("assistantId")String assistantId, @RequestParam("imgFile")MultipartFile file ) throws MalformedURLException {
 
         Assistant findOne = realService.findById(assistantId);
         String imgPath = findOne.getImg();

@@ -15,4 +15,7 @@ public class AudioRequestDto {
         this.voice = voice;
         this.input = input;
     }
+    public AudioRequestDto(String input){
+        this.input = input;
+    }
 }

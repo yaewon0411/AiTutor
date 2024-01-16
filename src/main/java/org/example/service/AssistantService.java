@@ -162,11 +162,11 @@ public class AssistantService {
 
     }
 
-    public ResponseEntity<Object> createSpeech(AudioRequestDto audioRequestDto) {
+    public ResponseEntity<Object> createSpeech(AudioRequestDto audioRequestDto, String voice) {
         byte[] res= assistantsClient.createSpeech(new AudioRequestDto(
                 "tts-1",
                 audioRequestDto.getInput(),
-                "alloy"
+                voice
         ));
         String path = "C:/Users/admin/Desktop/speech.mp3";
         return saveFile(res, path);
