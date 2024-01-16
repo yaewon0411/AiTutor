@@ -284,11 +284,16 @@ public class RealController {
             realService.modifyAssistantHasFile(assistantId);
             modifyRequestDto.setTools(Arrays.asList(
                     new Tool("code_interpreter")));
-        } else{ //새로 들어오는 파일 경로가 없으면 -> 삭제된 거 있나 확인
+        } else{ //새로 들어오는 파일이 없으면 -> 삭제된 거 있나 확인
 
             ResponseEntity<Object> response = assistantService.searchAssistant(assistantId);
             JSONObject object = new JSONObject(response.getBody());
+            System.out.println("response = " + response.getBody());
             List<String> fileIds =  (List<String>) object.get("file_ids");
+            System.out.println("====================================================");
+
+            System.out.println("object.toString() = " + object.toString());
+            System.out.println("====================================================");
 
             if(fileIds.size()>0){
                 for (String fileId : fileIds) {
@@ -342,7 +347,6 @@ public class RealController {
         ResponseEntity<Object> res = assistantService.deleteAssistant(assistantId);
         return ResponseEntity.ok(res.getBody());
     }
-
     //검색
     @GetMapping("/search")
     public ResponseEntity<Object> search(@RequestParam("keyword")String keyword){

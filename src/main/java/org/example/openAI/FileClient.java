@@ -16,8 +16,6 @@ public interface FileClient {
     FileResponseDto uploadFile(@RequestBody FilePathDto filePathDto);
 
 
-
-
     @DeleteMapping("files/{fileId}")
     ResponseEntity<Object> deleteFile(@PathVariable("fileId") String fileId);
 
