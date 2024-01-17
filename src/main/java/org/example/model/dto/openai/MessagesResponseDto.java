@@ -18,12 +18,17 @@ import java.util.Map;
 public class MessagesResponseDto {
     private String id;
     private String object;
+    @JsonProperty("created_at")
     private Long createdAt;
+    @JsonProperty("thread_id")
     private String threadId;
     private String role;
-    private MessageContentDto content;
+    private List<MessageContentDto> content;
+    @JsonProperty("file_ids")
     private List<String> fileIds;
+    @JsonProperty("assistant_id")
     private String assistantId;
+    @JsonProperty("run_id")
     private String runId;
     private Map<String, Object> metadata;
 

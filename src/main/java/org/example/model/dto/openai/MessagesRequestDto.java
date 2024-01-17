@@ -15,8 +15,10 @@ public class MessagesRequestDto {
     private String content;
 
     @JsonProperty("file_ids")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private ArrayList<String> fileIds;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Object metadata;
 
     public MessagesRequestDto(String role, String content, ArrayList<String> fileIds) {

@@ -48,12 +48,12 @@ public class AssistantController {
     }
 
     @PostMapping("/messages/{threadId}")
-    public ResponseEntity<Object> createMessages(@PathVariable String threadId, @RequestBody MessagesRequestDto messagesRequestDto) {
+    public ResponseEntity<Object> createMessages(@PathVariable("threadId") String threadId, @RequestBody MessagesRequestDto messagesRequestDto) {
         return assistantService.createMessages(threadId, messagesRequestDto);
     }
 
     @GetMapping("/messages/list")
-    public ResponseEntity<Object> getMessagesList(@RequestParam String threadId) {
+    public ResponseEntity<Object> getMessagesList(@RequestParam("threadId") String threadId) {
         return assistantService.getMessagesList(threadId);
     }
 
@@ -63,26 +63,26 @@ public class AssistantController {
     }
 
     @GetMapping("/runs/{threadId}")
-    public ResponseEntity<Object> getRunList(@PathVariable String threadId){
+    public ResponseEntity<Object> getRunList(@PathVariable("threadId") String threadId){
         return assistantService.getRunList(threadId);
     }
     @GetMapping("/runs/{threadId}/run/{runId}")
-    public ResponseEntity<Object> getRun(@PathVariable("threadId")String threadId, @PathVariable("runId")String runId){
-        return assistantService.getRun(threadId, runId);
+    public ResponseEntity<Object> searchRun(@PathVariable("threadId")String threadId, @PathVariable("runId")String runId){
+        return assistantService.searchRun(threadId, runId);
     }
 
     // 나중에 프론트로 바이트 배열 자체를 넘길 때 사용. service 함수 수정할 것
-    @PostMapping(value = "/audio", produces = "audio/mpeg")
-    public ResponseEntity<byte[]> createSpeech(@RequestBody AudioRequestDto audioRequestDto){
-
-        return assistantService.createSpeech2(audioRequestDto);
-        /*
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"speech.mp3\"")
-                .contentType(MediaType.parseMediaType("audio/mpeg"))
-                .body(assistantService.createSpeech2(audioRequestDto));
-         */
-    }
+//    @PostMapping(value = "/audio", produces = "audio/mpeg")
+//    public ResponseEntity<byte[]> createSpeech(@RequestBody AudioRequestDto audioRequestDto){
+//
+//        return assistantService.createSpeech2(audioRequestDto);
+//        /*
+//        return ResponseEntity.ok()
+//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"speech.mp3\"")
+//                .contentType(MediaType.parseMediaType("audio/mpeg"))
+//                .body(assistantService.createSpeech2(audioRequestDto));
+//         */
+//    }
 
 
 }

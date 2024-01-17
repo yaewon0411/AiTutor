@@ -1,12 +1,17 @@
 package org.example.service;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.Response;
 import lombok.RequiredArgsConstructor;
+import org.example.Assistant.Enum.*;
+import org.example.Assistant.dto.*;
 import org.example.openAI.AssistantsClient;
 import org.example.model.dto.*;
 import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.*;
-import org.example.Assistant.dto.ModifyRequestDto;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
@@ -16,7 +21,10 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -106,7 +114,7 @@ public class AssistantService {
 
     public ResponseEntity<Object> createMessages(String threadId, MessagesRequestDto messageRequestDto) {
         try {
-            Object res = assistantsClient.createMessages(
+            MessagesResponseDto res = assistantsClient.createMessages(
                     threadId,
                     new MessagesRequestDto(
                             "user",
@@ -152,9 +160,9 @@ public class AssistantService {
         }
     }
 
-    public ResponseEntity<Object> getRun(String threadId, String runId) {
+    public ResponseEntity<Object> searchRun(String threadId, String runId) {
         try{
-            Object res = assistantsClient.getRun(threadId, runId);
+            Object res = assistantsClient.searchRun(threadId, runId);
             return ResponseEntity.ok(res);
         }catch (Exception e){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -173,11 +181,11 @@ public class AssistantService {
     }
 
     //그냥 바로 바이트 배열로 반환하는 것도 프론트랑 테스트 해볼 것
-    public ResponseEntity<byte[]> createSpeech2(AudioRequestDto audioRequestDto) {
+    public ResponseEntity<byte[]> createSpeech2(AudioRequestDto audioRequestDto, String voice) {
         byte[] res = assistantsClient.createSpeech(new AudioRequestDto(
                 "tts-1",
                 audioRequestDto.getInput(),
-                audioRequestDto.getVoice()
+                voice
         ));
         return ResponseEntity.ok(res);
     }
@@ -231,7 +239,6 @@ public class AssistantService {
 
         List<MessagesListResponseDto.MessageData> data = listDto.getData();
         String answer = data.get(0).getContent().get(0).getText().getValue();
-        System.out.println("answer = " + answer);
         chatDto.setAnswer(answer);
 
         return chatDto;
@@ -263,17 +270,131 @@ public class AssistantService {
         //만드는 중!!!
     }
     //
-    public String getAssistantName(ResponseEntity<Object> assistantObject) {
-        JSONObject object = new JSONObject(Objects.requireNonNull(assistantObject.getBody()));
-        return object.get("name").toString();
+    public String setInstruction(String instruction, Map<String, Enum<?>> nonNullFields) {
+        System.out.println("setInstruction 실행!!!");
+        String res = instruction + "\n *지침 : ";
+        for (Enum<?> value : nonNullFields.values()) {
+            System.out.print("value.toString() = " + value.toString());
+            System.out.println("  value.getClass().toString() = " + value.getClass().toString());
+            if(value.getClass().equals(AnswerDetail.class)){
+                res += "당신은 답변하는 내용을 "+value+" 식으로 제공하셔야 합니다.\n";
+            }
+            else if(value.getClass().equals(ConversationalStyle.class)){
+                res += "당신은 사용자와 "+value.toString()+" 스타일로 대화합니다.\n";
+            }
+            else if(value.getClass().equals(Emoji.class)){
+                res += "당신은 답변에 이모티콘을 "+value.toString()+"합니다.\n";
+            }
+            else if(value.getClass().equals(EmotionalExpression.class)){
+                res += "당신은 사용자의 입력에 대해 "+value.toString()+"하게 판단해서 답변을 생성하셔야 합니다.\n";
+            }
+            else if(value.getClass().equals(LanguageMode.class)){
+                if(value == LanguageMode.SingleLanguage){
+                    res += "당신은 처음 사용자가 입력한 언어로만 답변을 생성하셔야 합니다.\n";
+                }
+                else{
+                    res += "당신은 다중 언어로 답변을 생성하실 수 있습니다.";
+                }
+            }
+            else if(value.getClass().equals(Personality.class)){
+                res += "당신은 답변할 때 "+value.toString()+"하게 답변해주셔야 합니다.\n";
+            }
+            else if(value.getClass().equals(Roleplay.class)){
+                res += "당신은 또한 "+value.toString()+"스타일로 답변합니다. 이 역할에 몰입해서 답변해주시기 바랍니다!\n";
+            }
+            else if(value.getClass().equals(SpeechLevel.class)){
+                res += "당신은 "+value.toString() +"하게 사용자에게 답변해줍니다.\n";
+            }
+            else if(value.getClass().equals(UseOfTechnicalLanguage.class)){
+                if(value == UseOfTechnicalLanguage.Use){
+                    res += "답변할 때 제발 전문적인 용어를 사용해서 설명해주시기 바랍니다!\n";
+                }
+                else{
+                    res += "답변할 때 제발 전문 용어가 아닌 쉬운 말로 설명해주시기 바랍니다!\n";
+                }
+            }
+        }
+
+        return res;
+    }
+    public CompletableFuture<ResponseEntity<Object>> callGptApi(String content){
+        return CompletableFuture.supplyAsync(new Supplier<ResponseEntity<Object>>() {
+            @Override
+            public ResponseEntity<Object> get() {
+                try{
+                    List<MessageDto> messages = new ArrayList<>();
+                    messages.add(new MessageDto("system","내가 AI 의 정체성을 설정하는 특정 문장을 주면, " +
+                            "너는 이 짧은 문장에 대해 더더욱 살을 붙여서 최대한 긴 문장으로(현재 문자수 기준으로 4배 분량) 재생산해줘." +
+                            "이 때 본격적으로 재생산된 특정 문장을 얘기하기 전엔 큰따옴표(\"\")로 감싸줘. "));
+                    messages.add(new MessageDto("user",  content));
+
+                    GptResponseDto res = assistantsClient.createChat(new GptRequestDto(
+                            "gpt-3.5-turbo",
+                            messages,
+                            1
+                    ));
+                    return ResponseEntity.ok(res);
+
+                }catch (Exception e){
+                    return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            }
+        });
     }
 
-    public String getAssistantDescription(ResponseEntity<Object> assistantObject) {
-        JSONObject object = new JSONObject(Objects.requireNonNull(assistantObject.getBody()));
-        return object.get("description").toString();
+    public CompletableFuture<String> processGptResponse(String content){
+        return callGptApi(content).thenApply(response -> {
+            JSONObject object = new JSONObject(response.getBody());
+            JSONArray array = (JSONArray) object.get("choices");
+            JSONObject messageObject = array.getJSONObject(0);
+            String answer = messageObject.getJSONObject("message").get("content").toString();
+            return answer.replaceAll("\"","");
+        });
     }
 
-    public String setInstruction(String instruction, String personality, String speechLevel) {
-        return instruction + "\n *지침 : 답변할 때 "+personality+"하게 답변 해주세요.\n 당신은 또한 "+speechLevel+"하게 답변합니다.";
+    public Map<String, Enum<?>> getNonNullFields(AssistantCreateDto assistantCreateDto) {
+
+        Map<String, Enum<?>> nonNullFields = new HashMap<>();
+        Field[] fields = assistantCreateDto.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            if(field.getType().isEnum()){
+                try{
+                    field.setAccessible(true);
+                    Object value = field.get(assistantCreateDto);
+                    if(value != null){
+                        nonNullFields.put(field.getName(), (Enum<?>)value);
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return nonNullFields;
     }
+    //런을 계속 실행시켜서 status를 확인하고 이게 completed로 바뀌면
+    //메시지 리스트의 해당 메시지 답변 내용을 반환
+    public CompletableFuture<String> checkRunStatus(String threadId, String runId){
+        return CompletableFuture.supplyAsync(() -> assistantsClient.searchRun(threadId, runId))
+                .thenComposeAsync(response -> {
+                    String status = response.getStatus().toString();
+                    if(status.equals("completed")){
+                        return CompletableFuture.supplyAsync(() -> {
+                            ResponseEntity<Object> res = getMessagesList(threadId);
+                            return makeChat(res).getAnswer();
+                        });
+                    } else{
+                        return checkRunStatus(threadId, runId);
+                    }
+                });
+    }
+    public CompletableFuture<ChatDto> getMessage(String threadId, String runId){
+        return checkRunStatus(threadId, runId).thenApplyAsync(response ->{
+            ChatDto chatDto = new ChatDto();
+            chatDto.setAnswer(response);
+            return chatDto;
+        });
+    }
+
+
 }

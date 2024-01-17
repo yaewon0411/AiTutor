@@ -1,11 +1,6 @@
 package org.example.Assistant;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
-import org.example.Assistant.Enum.Personality;
-import org.example.Assistant.Enum.SpeechLevel;
-import org.example.Assistant.Enum.Voice;
 import org.example.Assistant.dto.*;
 import org.example.model.dto.*;
 import org.example.model.dto.audio.AudioRequestDto;
@@ -13,21 +8,17 @@ import org.example.model.dto.openai.*;
 import org.example.service.AssistantService;
 import org.example.service.FileService;
 import org.example.service.S3Service;
-import org.h2.util.json.JSONValidationTargetWithoutUniqueKeys;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.aop.scope.ScopedProxyUtils;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,6 +30,8 @@ public class RealController {
     private final RealService realService;
     private final S3Service s3Service;
 
+
+
     //홈 화면 - 어시스턴트 리스트
     @GetMapping("/")
     public ResponseEntity<Object> home(){
@@ -49,8 +42,14 @@ public class RealController {
     @PostMapping("/assistants")
     public ResponseEntity<Object> createAssistant(@ModelAttribute AssistantCreateDto assistantCreateDto) throws IOException {
 
+        //gpt한테 instruction 가공 요청
+        String gptInstruction = assistantService.processGptResponse(assistantCreateDto.getInstruction()).join();
+
+        //enum 타입에 대해서만 필드가 null인지 아닌지 검사
+        Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFields(assistantCreateDto);
+
         //튜터 성향 뽑아서 instruction에 넣기
-        String setInstruction = assistantService.setInstruction(assistantCreateDto.getInstruction(), assistantCreateDto.getPersonality().toString(), assistantCreateDto.getSpeechLevel().toString());
+        String setInstruction = assistantService.setInstruction(gptInstruction, nonNullFields);
         boolean hasFile = false;
 
         AssistantCreateRequestDto AIassistantCreateDto = new AssistantCreateRequestDto();
@@ -80,9 +79,24 @@ public class RealController {
         String imgUrl = s3Service.uploadImage(assistantCreateDto.getImgFile());
 
         //db에 어시스턴트 insert
-        Assistant assistant = new Assistant(assistantId, assistantCreateDto.getName(), imgUrl, assistantCreateDto.getDescription(), assistantCreateDto.getInstruction(), hasFile,
-                assistantCreateDto.getPersonality(), assistantCreateDto.getSpeechLevel(), assistantCreateDto.getVoice());
-        realService.save(assistant);
+        Assistant.AssistantBuilder builder =
+                Assistant.builder().id(assistantId).name(assistantCreateDto.getName()).img(imgUrl).description(assistantCreateDto.getDescription())
+                .instruction(assistantCreateDto.getInstruction()).hasFile(hasFile);
+
+        for (Map.Entry<String, Enum<?>> entry : nonNullFields.entrySet()) {
+            String fieldName = entry.getKey();
+            Enum<?> fieldValue = entry.getValue();
+            try {
+                // "set" + 필드 이름으로 메서드 이름 구성
+                Method method = builder.getClass().getMethod(fieldName, fieldValue.getClass());
+                // 메서드를 호출하여 값을 설정
+                method.invoke(builder, fieldValue);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+                // 적절한 예외 처리
+            }
+        }
+        realService.save(builder.build());
 
         return ResponseEntity.ok(assistantObject);
     }
@@ -120,38 +134,16 @@ public class RealController {
         fileIds.add(fileId);
 
         //메시지 생성
-        assistantService.createMessages(threadId, new MessagesRequestDto(getMessageDto.getContent(), fileIds));
+        ResponseEntity<Object> messages = assistantService.createMessages(threadId, new MessagesRequestDto(getMessageDto.getContent(), fileIds));
+        System.out.println("messages.getBody().toString() = " + messages.getBody().toString());
+
         //런 생성
         ResponseEntity<Object> runs = assistantService.createRuns(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
         //런 아이디 꺼내기
         String runId = assistantService.getRunId(runs);
-        //런 실행 상태 추적
-        ResponseEntity<Object> run = assistantService.getRun(threadId, runId);
-        JSONObject object = new JSONObject(Objects.requireNonNull(run.getBody()));
-        String status = object.get("status").toString();
-        ChatDto chatDto = new ChatDto();
-        int cnt = 0;
+        //런 실행 상태 추적 후 답변 얻기
+        ChatDto chatDto= assistantService.getMessage(threadId, runId).join();
 
-        while(status.equals("in_progress")) {
-            System.out.println("cnt = " + cnt);
-            ResponseEntity<Object> runForCheck = assistantService.getRun(threadId, runId);
-            JSONObject objectForCheck = new JSONObject(Objects.requireNonNull(runForCheck.getBody()));
-
-            if (objectForCheck.get("status").toString().equals("completed")) {
-                //메시지 리스트 조회
-                ResponseEntity<Object> messagesList = assistantService.getMessagesList(threadId);
-                //답변 내보내기
-                chatDto.setAnswer(assistantService.makeChat(messagesList).getAnswer());
-                break;
-            }
-            try{
-                Thread.sleep(1000);
-            }catch(InterruptedException e){
-                Thread.currentThread().interrupt();
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            cnt++;
-        }
         //음성으로 질문한 거라면
         if(getMessageDto.getIsVoice().equals("true")){
             //byte[] speech = assistantService.createSpeech2(new AudioRequestDto(chatDto.getAnswer()));
@@ -203,10 +195,9 @@ public class RealController {
         Assistant findOne = realService.findById(assistantId);
         String setInstruction = "";
 
-        //튜터 성향에 관한 수정 사항 검증
-        Personality personality = findOne.getPersonality();
-        SpeechLevel speechLevel = findOne.getSpeechLevel();
+        //튜터 성향에 관한 수정 사항 검증 + instruction과 함께 수정 들어가야 함
 
+        /*
         //instruction 변경 검증
         if(!modifyRequestDto.getInstruction().equals(findOne.getInstruction())){
             realService.modifyAssistantInstruction(modifyRequestDto.getInstruction(), assistantId);
@@ -256,6 +247,8 @@ public class RealController {
                 realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
             }
         }
+
+         */
 
         //이름 변경 검증
         if(!modifyRequestDto.getName().equals(findOne.getName())){

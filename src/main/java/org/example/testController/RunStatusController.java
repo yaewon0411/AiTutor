@@ -45,7 +45,7 @@ public class RunStatusController {
 
         ScheduledFuture<?> scheduledFuture = scheduler.scheduleAtFixedRate(() -> {
             try {
-                RunsResponseDto response = assistantsClient.getRun(threadId, runId);
+                RunsResponseDto response = assistantsClient.searchRun(threadId, runId);
                 System.out.println("retrying............");
                 if ("completed".equals(response.getStatus())) {
                     future.complete(response);
@@ -69,7 +69,7 @@ public class RunStatusController {
         while (true) {
             try {
                 Thread.sleep(2000);
-                RunsResponseDto response = assistantsClient.getRun(threadId, runId);
+                RunsResponseDto response = assistantsClient.searchRun(threadId, runId);
                 System.out.println("retrying............");
                 if ("completed".equals(response.getStatus())) {
                     break;

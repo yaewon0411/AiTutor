@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class getMessageDto {
+    @JsonProperty("content")
     private String content;
     private String assistantId;
     @Nullable
