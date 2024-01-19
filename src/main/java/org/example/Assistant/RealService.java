@@ -67,54 +67,21 @@ public class RealService {
         else return "onyx";
     }
 
-    public void modifyAssistantPersonality(Personality personality, String assistantId){
-        assistantRepository.updatePersonalityById(personality, assistantId);
-    }
-
-
 
     public void modifyAssistantImg(String assistantId, String img) {
         assistantRepository.updateAssistantImgById(assistantId, img);
     }
-
 
     public void deleteAssistant(String assistantId) {
         assistantRepository.deleteAssistantById(assistantId);
     }
 
 
-    public void setHasFileTrue(Assistant findOne) {
-        findOne.setHasFileTure();
-    }
-
-
-    public void modifyAssistantName(String name, String assistantId) {
-        assistantRepository.updateNameById(name, assistantId);
-    }
-
-
-    public void modifyAssistantDescription(String description, String assistantId) {
-        assistantRepository.updateDescriptionById(description, assistantId);
-    }
-
-
-    public void modifyAssistantInstruction(String instructions, String assistantId) {
-        assistantRepository.updateInstructionById(instructions, assistantId);
-    }
-
-    public void modifyAssistantSpeechLevel(SpeechLevel speechLevel, String assistantId) {
-        assistantRepository.updateSpeechLevelById(speechLevel, assistantId);
-    }
-
     public void modifyAssistantHasFileTrue(String assistantId) {
         assistantRepository.updateAssistantHasFileTrueById(assistantId);
     }
     public void modifyAssistantHasFileFalse(String assistantId){
         assistantRepository.updateAssistantHasFileFalseById(assistantId);
-    }
-
-    public void modifyAssistantVoice(Voice voice, String assistantId) {
-        assistantRepository.updateVoiceById(voice, assistantId);
     }
 
     public List<ShowHomeDto> searchByKeyword(String keyword){
