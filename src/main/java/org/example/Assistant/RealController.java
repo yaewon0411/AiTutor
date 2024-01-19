@@ -84,7 +84,7 @@ public class RealController {
             String fieldName = entry.getKey();
             Enum<?> fieldValue = entry.getValue();
             try {
-                // setXXX 필드 이름으로 메서드 이름 구성
+                // 필드 이름으로 getter 메서드 이름 구성
                 Method method = builder.getClass().getMethod(fieldName, fieldValue.getClass());
                 // 메서드를 호출하여 값을 설정
                 method.invoke(builder, fieldValue);
