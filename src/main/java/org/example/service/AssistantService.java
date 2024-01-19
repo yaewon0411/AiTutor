@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.bridge.Message;
 import org.example.Assistant.Enum.*;
 import org.example.Assistant.dto.*;
 import org.example.openAI.AssistantsClient;
@@ -21,9 +22,11 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
 @Service
@@ -31,7 +34,7 @@ import java.util.function.Supplier;
 public class AssistantService {
 
     private final AssistantsClient assistantsClient;
-    private String assistantModel = "gpt-3.5-turbo";
+    private String assistantModel = "gpt-4";
 
     public ResponseEntity<Object> createAssistant(AssistantCreateRequestDto assistantCreateRequestDto) {
         try {
@@ -40,7 +43,7 @@ public class AssistantService {
                             assistantModel,
                             assistantCreateRequestDto.getName(),
                             assistantCreateRequestDto.getInstruction(),
-                            assistantCreateRequestDto.getTools(),
+                            Arrays.asList(new Tool("code_interpreter")),
                             assistantCreateRequestDto.getDescription(),
                             assistantCreateRequestDto.getFileIds()
                     )
@@ -67,7 +70,7 @@ public class AssistantService {
                             assistantModel,
                             assistantModifyRequestDto.getFileIds(),
                             assistantModifyRequestDto.getDescription(),
-                            assistantModifyRequestDto.getTools(),
+                            Arrays.asList(new Tool("code_interpreter")),
                             assistantModifyRequestDto.getName()
                     ));
             return ResponseEntity.ok(res);
@@ -112,21 +115,24 @@ public class AssistantService {
         }
     }
 
-    public ResponseEntity<Object> createMessages(String threadId, MessagesRequestDto messageRequestDto) {
+    public ResponseEntity<Object> createMessages(String threadId, MessagesRequestDto messagesRequestDto) {
         try {
-            MessagesResponseDto res = assistantsClient.createMessages(
+            MessagesResponseDto res;
+            System.out.println("messagesRequestDto = " + messagesRequestDto.getFile_ids().size());
+            System.out.println("messagesRequestDto.toString() = " + messagesRequestDto.toString());
+
+            res = assistantsClient.createMessages(
                     threadId,
-                    new MessagesRequestDto(
-                            "user",
-                            messageRequestDto.getContent(),
-                            messageRequestDto.getFileIds()
-                    )
-            );
+                    messagesRequestDto);
+            System.out.println("res.toString() = " + res.toString());
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
 
     public ResponseEntity<Object> getMessagesList(String threadId) {
         try {
@@ -181,13 +187,13 @@ public class AssistantService {
     }
 
     //그냥 바로 바이트 배열로 반환하는 것도 프론트랑 테스트 해볼 것
-    public ResponseEntity<byte[]> createSpeech2(AudioRequestDto audioRequestDto, String voice) {
+    public byte[] createSpeech2(AudioRequestDto audioRequestDto, String voice) {
         byte[] res = assistantsClient.createSpeech(new AudioRequestDto(
                 "tts-1",
                 audioRequestDto.getInput(),
                 voice
         ));
-        return ResponseEntity.ok(res);
+        return res;
     }
 
     public ResponseEntity<Object> saveFile(byte[] data, String path){
@@ -317,39 +323,18 @@ public class AssistantService {
 
         return res;
     }
-    public CompletableFuture<ResponseEntity<Object>> callGptApi(String content){
-        return CompletableFuture.supplyAsync(new Supplier<ResponseEntity<Object>>() {
-            @Override
-            public ResponseEntity<Object> get() {
-                try{
-                    List<MessageDto> messages = new ArrayList<>();
-                    messages.add(new MessageDto("system","내가 AI 의 정체성을 설정하는 특정 문장을 주면, " +
-                            "너는 이 짧은 문장에 대해 더더욱 살을 붙여서 최대한 긴 문장으로(현재 문자수 기준으로 4배 분량) 재생산해줘." +
-                            "이 때 본격적으로 재생산된 특정 문장을 얘기하기 전엔 큰따옴표(\"\")로 감싸줘. "));
-                    messages.add(new MessageDto("user",  content));
-
-                    GptResponseDto res = assistantsClient.createChat(new GptRequestDto(
-                            "gpt-3.5-turbo",
-                            messages,
-                            1
-                    ));
-                    return ResponseEntity.ok(res);
-
-                }catch (Exception e){
-                    return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-            }
-        });
-    }
-
-    public CompletableFuture<String> processGptResponse(String content){
-        return callGptApi(content).thenApply(response -> {
-            JSONObject object = new JSONObject(response.getBody());
-            JSONArray array = (JSONArray) object.get("choices");
-            JSONObject messageObject = array.getJSONObject(0);
-            String answer = messageObject.getJSONObject("message").get("content").toString();
-            return answer.replaceAll("\"","");
-        });
+    public CompletableFuture<String> getGptInstruction(String instruction){
+        return CompletableFuture.supplyAsync(()-> assistantsClient.createChat(new GptRequestDto(
+                "gpt-3.5-turbo",
+                Arrays.asList(new MessageDto(
+                        "system","내가 AI 의 정체성을 설정하는 특정 문장을 주면, " +
+                        "너는 이 짧은 문장에 대해 더더욱 살을 붙여서 최대한 긴 문장으로(현재 문자수 기준으로 4배 분량) 재생산해줘." +
+                        "이 때 본격적으로 재생산된 특정 문장을 얘기하기 전엔 큰따옴표(\"\")로 감싸줘. "),
+                        new MessageDto("user",instruction))
+                ,
+                1)))
+                .thenApply(response ->
+                    response.getChoices().get(0).getMessage().getContent());
     }
 
     public Map<String, Enum<?>> getNonNullFields(AssistantCreateDto assistantCreateDto) {
@@ -394,6 +379,16 @@ public class AssistantService {
             chatDto.setAnswer(response);
             return chatDto;
         });
+    }
+    public CompletableFuture<MessagesResponseDto> createMessage2(String threadId, MessagesRequestDto messagesRequestDto){
+        return CompletableFuture.supplyAsync(() -> createMessages(threadId, messagesRequestDto))
+                .thenComposeAsync(response -> {
+                    return (CompletionStage<MessagesResponseDto>) response;
+                });
+
+    }
+    public MessagesResponseDto processCreateMessage(String threadId, MessagesRequestDto messagesRequestDto){
+        return createMessage2(threadId, messagesRequestDto).join();
     }
 
 

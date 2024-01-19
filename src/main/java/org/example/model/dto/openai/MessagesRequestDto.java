@@ -16,7 +16,7 @@ public class MessagesRequestDto {
 
     @JsonProperty("file_ids")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private ArrayList<String> fileIds;
+    private ArrayList<String> file_ids;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Object metadata;
@@ -24,11 +24,15 @@ public class MessagesRequestDto {
     public MessagesRequestDto(String role, String content, ArrayList<String> fileIds) {
         this.role = role;
         this.content = content;
-        this.fileIds = fileIds;
+        this.file_ids = fileIds;
     }
 
     public MessagesRequestDto(String content, ArrayList<String> fileIds) {
         this.content = content;
-        this.fileIds = fileIds;
+        this.file_ids = fileIds;
+    }
+    public MessagesRequestDto(String role, String content){
+        this.role = role;
+        this.content = content;
     }
 }

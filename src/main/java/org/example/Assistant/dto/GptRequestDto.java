@@ -14,5 +14,4 @@ public class GptRequestDto {
     private List<MessageDto> messages;
     private int n;
 
-
 }

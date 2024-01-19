@@ -24,10 +24,13 @@ public class MessagesResponseDto {
     private String threadId;
     private String role;
     private List<MessageContentDto> content;
+
     @JsonProperty("file_ids")
     private List<String> fileIds;
+
     @JsonProperty("assistant_id")
     private String assistantId;
+
     @JsonProperty("run_id")
     private String runId;
     private Map<String, Object> metadata;

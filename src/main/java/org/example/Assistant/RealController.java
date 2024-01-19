@@ -8,8 +8,11 @@ import org.example.model.dto.openai.*;
 import org.example.service.AssistantService;
 import org.example.service.FileService;
 import org.example.service.S3Service;
+import org.example.testController.AssistantController;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,16 +25,15 @@ import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin
 public class RealController {
 
     private final AssistantService assistantService;
     private final FileService fileService;
     private final RealService realService;
     private final S3Service s3Service;
+    private final ModelMapper modelMapper;
 
-
-
+    
     //홈 화면 - 어시스턴트 리스트
     @GetMapping("/")
     public ResponseEntity<Object> home(){
@@ -43,7 +45,7 @@ public class RealController {
     public ResponseEntity<Object> createAssistant(@ModelAttribute AssistantCreateDto assistantCreateDto) throws IOException {
 
         //gpt한테 instruction 가공 요청
-        String gptInstruction = assistantService.processGptResponse(assistantCreateDto.getInstruction()).join();
+        String gptInstruction = assistantService.getGptInstruction(assistantCreateDto.getInstruction()).join();
 
         //enum 타입에 대해서만 필드가 null인지 아닌지 검사
         Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFields(assistantCreateDto);
@@ -122,20 +124,22 @@ public class RealController {
     //메시지 보내고 답변 받기 - 파일(사진 등)으로도 질문하는 경우로 수정
     @PostMapping("/assistants/{threadId}/chat")
     public ResponseEntity<Object> getMessage(@PathVariable("threadId") String threadId, @ModelAttribute getMessageDto getMessageDto
-    ) throws IOException {
-
-        String fileId = "";
+    ){
         //입력한 파일이 있으면
         if(getMessageDto.getFile() != null){
             ResponseEntity<Object> response = fileService.uploadFile(getMessageDto.getFile());
-            fileId = fileService.getFileId(response);
-        }
-        ArrayList<String> fileIds = new ArrayList<>();
-        fileIds.add(fileId);
+            String fileId = fileService.getFileId(response);
+            System.out.println("fileId = " + fileId);
+            ArrayList<String> fileIds = new ArrayList<>();
+            fileIds.add(fileId);
 
-        //메시지 생성
-        ResponseEntity<Object> messages = assistantService.createMessages(threadId, new MessagesRequestDto(getMessageDto.getContent(), fileIds));
-        System.out.println("messages.getBody().toString() = " + messages.getBody().toString());
+            //메시지 생성
+            assistantService.createMessages(threadId, new MessagesRequestDto("user", getMessageDto.getContent(), fileIds));
+        }
+        else{
+            //메시지 생성
+            assistantService.createMessages(threadId, new MessagesRequestDto("user", getMessageDto.getContent()));
+        }
 
         //런 생성
         ResponseEntity<Object> runs = assistantService.createRuns(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
@@ -146,10 +150,10 @@ public class RealController {
 
         //음성으로 질문한 거라면
         if(getMessageDto.getIsVoice().equals("true")){
-            //byte[] speech = assistantService.createSpeech2(new AudioRequestDto(chatDto.getAnswer()));
             System.out.println("음성 인터페이스 전환");
             String voice = realService.getAssistantVoice(getMessageDto.getAssistantId());
-            ResponseEntity<Object> speech = assistantService.createSpeech(new AudioRequestDto(chatDto.getAnswer()), voice);
+            //ResponseEntity<Object> speech = assistantService.createSpeech(new AudioRequestDto(chatDto.getAnswer()), voice);
+            byte[] speech = assistantService.createSpeech2(new AudioRequestDto(chatDto.getAnswer()), voice);
             TutorMessageDto res = new TutorMessageDto(chatDto, speech);
             return ResponseEntity.ok(res);
         }
@@ -188,12 +192,17 @@ public class RealController {
     //어시스턴트 수정
     //1) openAI 수정
     //2) DB 수정
-
     @PutMapping("/assistants/{assistantId}/info/page")
-    public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws JSONException {
+    public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws JSONException, IllegalAccessException {
 
         Assistant findOne = realService.findById(assistantId);
         String setInstruction = "";
+
+        //변경 된 거 없어도 그대로 값 들고 옴. 필드 삭제되었을 때만 프론트에서 아예 해당 객체 보내지 않음(null)
+        realService.updateAssistant(assistantId, modifyRequestDto);
+
+
+
 
         //튜터 성향에 관한 수정 사항 검증 + instruction과 함께 수정 들어가야 함
 
@@ -249,54 +258,63 @@ public class RealController {
         }
 
          */
-
-        //이름 변경 검증
-        if(!modifyRequestDto.getName().equals(findOne.getName())){
-            realService.modifyAssistantName(modifyRequestDto.getName(), assistantId);
-        }
-        //description 변경 검증
-        if(!modifyRequestDto.getDescription().equals(findOne.getDescription())){
-            realService.modifyAssistantDescription(modifyRequestDto.getDescription(), assistantId);
-        }
-        //voice 변경 검증
-        if(!modifyRequestDto.getVoice().equals(findOne.getVoice())){
-            realService.modifyAssistantVoice(modifyRequestDto.getVoice(), assistantId);
-        }
+//
+//        //이름 변경 검증
+//        if(!modifyRequestDto.getName().equals(findOne.getName())){
+//            realService.modifyAssistantName(modifyRequestDto.getName(), assistantId);
+//        }
+//        //description 변경 검증
+//        if(!modifyRequestDto.getDescription().equals(findOne.getDescription())){
+//            realService.modifyAssistantDescription(modifyRequestDto.getDescription(), assistantId);
+//        }
+//        //voice 변경 검증
+//        if(!modifyRequestDto.getVoice().equals(findOne.getVoice())){
+//            realService.modifyAssistantVoice(modifyRequestDto.getVoice(), assistantId);
+//        }
         //파일 변경 검증
         if(modifyRequestDto.getFile1() != null){ //새로 들어오는 파일 경로가 있으면
             ResponseEntity<Object> response = fileService.uploadFile(modifyRequestDto.getFile1());
+            System.out.println("it has file1");
             String fileId = fileService.getFileId(response);
                 //수정하면서 업로드된 파일 아이디 dto에 넣기
                 modifyRequestDto.getFileIds().add(fileId);
                 if(modifyRequestDto.getFile2() != null){
+                    System.out.println("it has file2");
                     ResponseEntity<Object> response2 = fileService.uploadFile(modifyRequestDto.getFile2());
                     String fileId2 = fileService.getFileId(response2);
                     modifyRequestDto.getFileIds().add(fileId2);
             }
             //hasFile = true 설정
-            realService.modifyAssistantHasFile(assistantId);
+            realService.modifyAssistantHasFileTrue(assistantId);
             modifyRequestDto.setTools(Arrays.asList(
                     new Tool("code_interpreter")));
         } else{ //새로 들어오는 파일이 없으면 -> 삭제된 거 있나 확인
 
             ResponseEntity<Object> response = assistantService.searchAssistant(assistantId);
-            JSONObject object = new JSONObject(response.getBody());
-            System.out.println("response = " + response.getBody());
-            List<String> fileIds =  (List<String>) object.get("file_ids");
-            System.out.println("====================================================");
+            List<String> fileIds = assistantService.getFileIdList(response);
+            int fileIdsSize = fileIds.size();
 
-            System.out.println("object.toString() = " + object.toString());
-            System.out.println("====================================================");
-
-            if(fileIds.size()>0){
+            if(!fileIds.isEmpty()){
                 for (String fileId : fileIds) {
                     fileService.deleteFile(fileId);
+                    fileIdsSize -= 1;
                 }
             }
+            if(fileIdsSize == 0){
+                realService.modifyAssistantHasFileFalse(assistantId);
+            }
         }
+
         //최종 어시스턴트 수정
-        ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
-        return ResponseEntity.ok(res);
+        if(!modifyRequestDto.getInstruction().equals(findOne.getInstruction())){
+            String gptInstruction = assistantService.getGptInstruction(modifyRequestDto.getInstruction()).join();
+            modifyRequestDto.setInstruction(gptInstruction);
+            ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
+            return ResponseEntity.ok(res);
+        } else{
+            ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
+            return ResponseEntity.ok(res);
+        }
     }
 
     //사용자가 튜터 이미지를 변경했을 때만 작돟하도록 프론트에서 설정

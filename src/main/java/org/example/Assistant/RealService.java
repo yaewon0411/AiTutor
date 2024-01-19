@@ -1,10 +1,13 @@
 package org.example.Assistant;
 
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import org.example.Assistant.Enum.Personality;
 import org.example.Assistant.Enum.SpeechLevel;
 import org.example.Assistant.Enum.Voice;
 import org.example.Assistant.dto.*;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +20,7 @@ import java.util.Optional;
 @Transactional
 public class RealService {
     private final AssistantRepository assistantRepository;
+    private final ModelMapper modelMapper;
 
     public void save(Assistant assistant) {
         assistantRepository.save(assistant);
@@ -52,7 +56,8 @@ public class RealService {
     @Transactional(readOnly = true)
     public TutorModifyDto getTutorInfoToModify(String assistantId){
         Assistant findOne = assistantRepository.findById(assistantId).get();
-        return new TutorModifyDto(findOne.getName(), findOne.getImg(), findOne.getDescription(), findOne.getPersonality(),findOne.getSpeechLevel(),findOne.getVoice(), findOne.getInstruction());
+        TutorModifyDto res = modelMapper.map(findOne, TutorModifyDto.class);
+        return res;
     }
     @Transactional(readOnly = true)
     public String getAssistantVoice(String assistantId){
@@ -62,9 +67,8 @@ public class RealService {
         else return "onyx";
     }
 
-
     public void modifyAssistantPersonality(Personality personality, String assistantId){
-        assistantRepository.updateAssistantPersonalityById(personality, assistantId);
+        assistantRepository.updatePersonalityById(personality, assistantId);
     }
 
 
@@ -85,29 +89,32 @@ public class RealService {
 
 
     public void modifyAssistantName(String name, String assistantId) {
-        assistantRepository.updateAssistantNameById(name, assistantId);
+        assistantRepository.updateNameById(name, assistantId);
     }
 
 
     public void modifyAssistantDescription(String description, String assistantId) {
-        assistantRepository.updateAssistantDescriptionById(description, assistantId);
+        assistantRepository.updateDescriptionById(description, assistantId);
     }
 
 
     public void modifyAssistantInstruction(String instructions, String assistantId) {
-        assistantRepository.updateAssistantInstructionById(instructions, assistantId);
+        assistantRepository.updateInstructionById(instructions, assistantId);
     }
 
     public void modifyAssistantSpeechLevel(SpeechLevel speechLevel, String assistantId) {
-        assistantRepository.updateAssistantSpeechLevelById(speechLevel, assistantId);
+        assistantRepository.updateSpeechLevelById(speechLevel, assistantId);
     }
 
-    public void modifyAssistantHasFile(String assistantId) {
-        assistantRepository.updateAssistantHasFileById(assistantId);
+    public void modifyAssistantHasFileTrue(String assistantId) {
+        assistantRepository.updateAssistantHasFileTrueById(assistantId);
+    }
+    public void modifyAssistantHasFileFalse(String assistantId){
+        assistantRepository.updateAssistantHasFileFalseById(assistantId);
     }
 
     public void modifyAssistantVoice(Voice voice, String assistantId) {
-        assistantRepository.updateAssistantVoiceById(voice, assistantId);
+        assistantRepository.updateVoiceById(voice, assistantId);
     }
 
     public List<ShowHomeDto> searchByKeyword(String keyword){
@@ -118,5 +125,25 @@ public class RealService {
             showHomeDtoList.add(searchDto);
         }
         return showHomeDtoList;
+    }
+
+    @Transactional
+    public void updateAssistant(String assistantId, ModifyRequestDto modifyRequestDto) throws IllegalAccessException {
+        Assistant findOne = assistantRepository.findById(assistantId).get();
+        if(findOne == null) throw new IllegalAccessException("해당 튜터를 찾을 수 없습니다.");
+
+        BeanUtils.copyProperties(modifyRequestDto, findOne, "id");
+
+        if(modifyRequestDto.getPersonality() == null) findOne.setPersonality(null);
+        if(modifyRequestDto.getSpeechLevel() == null) findOne.setSpeechLevel(null);
+        if(modifyRequestDto.getAnswerDetail() == null) findOne.setAnswerDetail(null);
+        if(modifyRequestDto.getConversationalStyle() == null) findOne.setConversationalStyle(null);
+        if(modifyRequestDto.getEmoji() == null) findOne.setEmoji(null);
+        if(modifyRequestDto.getEmotionalExpression() == null) findOne.setEmotionalExpression(null);
+        if(modifyRequestDto.getLanguageMode() == null) findOne.setLanguageMode(null);
+        if(modifyRequestDto.getUseOfTechnicalLanguage() == null) findOne.setUseOfTechnicalLanguage(null);
+
+        //변경 사항 적용
+        assistantRepository.save(findOne);
     }
 }
