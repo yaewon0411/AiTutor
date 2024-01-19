@@ -84,9 +84,9 @@ public class RealController {
             String fieldName = entry.getKey();
             Enum<?> fieldValue = entry.getValue();
             try {
-                // 필드 이름으로 getter 메서드 이름 구성
+                // 필드 이름으로 setter 메서드 이름 구성
                 Method method = builder.getClass().getMethod(fieldName, fieldValue.getClass());
-                // 메서드를 호출하여 값을 설정
+                // 메서드 호출해서 값 설정
                 method.invoke(builder, fieldValue);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
