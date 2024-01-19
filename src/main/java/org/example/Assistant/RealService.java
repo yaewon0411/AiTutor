@@ -1,6 +1,7 @@
 package org.example.Assistant;
 
 import com.fasterxml.jackson.databind.util.BeanUtil;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.Assistant.Enum.Personality;
 import org.example.Assistant.Enum.SpeechLevel;
@@ -37,31 +38,33 @@ public class RealService {
     }
     @Transactional(readOnly = true)
     public Assistant findById(String assistantId){
-        return assistantRepository.findById(assistantId).get();
+        Optional<Assistant> findOne = assistantRepository.findById(assistantId);
+        if(findOne.isPresent()) return findOne.get();
+        else throw new EntityNotFoundException("Assistant not found with id: " + assistantId);
     }
 
     @Transactional(readOnly = true)
     public TutoringPageDto findByIdInTutoringPage(String assistantId) {
-        Assistant findOne = assistantRepository.findById(assistantId).get();
+        Assistant findOne = findById(assistantId);
         return new TutoringPageDto(findOne.getName(), findOne.getDescription(), findOne.getImg());
     }
 
     @Transactional(readOnly = true)
     public TutorInfoDto getTutorInfo(String assistantId){
-        Assistant findOne = assistantRepository.findById(assistantId).get();
+        Assistant findOne = findById(assistantId);
         return new TutorInfoDto(findOne.getName(), findOne.getImg(), findOne.getDescription(), findOne.getPersonality(),findOne.getSpeechLevel(),findOne.getVoice());
     }
 
     //튜터 수정 화면에 뿌려지는 정보
     @Transactional(readOnly = true)
     public TutorModifyDto getTutorInfoToModify(String assistantId){
-        Assistant findOne = assistantRepository.findById(assistantId).get();
+        Assistant findOne = findById(assistantId);
         TutorModifyDto res = modelMapper.map(findOne, TutorModifyDto.class);
         return res;
     }
     @Transactional(readOnly = true)
     public String getAssistantVoice(String assistantId){
-        Assistant findOne = assistantRepository.findById(assistantId).get();
+        Assistant findOne = findById(assistantId);
         Voice voice = findOne.getVoice();
         if(voice.toString().equals("Female")) return "shimmer";
         else return "onyx";
