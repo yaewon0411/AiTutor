@@ -8,11 +8,7 @@ import org.example.model.dto.openai.*;
 import org.example.service.AssistantService;
 import org.example.service.FileService;
 import org.example.service.S3Service;
-import org.example.testController.AssistantController;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -88,13 +84,12 @@ public class RealController {
             String fieldName = entry.getKey();
             Enum<?> fieldValue = entry.getValue();
             try {
-                // "set" + 필드 이름으로 메서드 이름 구성
+                // setXXX 필드 이름으로 메서드 이름 구성
                 Method method = builder.getClass().getMethod(fieldName, fieldValue.getClass());
                 // 메서드를 호출하여 값을 설정
                 method.invoke(builder, fieldValue);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
-                // 적절한 예외 처리
             }
         }
         realService.save(builder.build());
