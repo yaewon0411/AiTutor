@@ -31,7 +31,6 @@ public class RealController {
     private final FileService fileService;
     private final RealService realService;
     private final S3Service s3Service;
-    private final ModelMapper modelMapper;
 
     
     //홈 화면 - 어시스턴트 리스트
@@ -48,7 +47,7 @@ public class RealController {
         String gptInstruction = assistantService.getGptInstruction(assistantCreateDto.getInstruction()).join();
 
         //enum 타입에 대해서만 필드가 null인지 아닌지 검사
-        Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFields(assistantCreateDto);
+        Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFieldsWhenCreate(assistantCreateDto);
 
         //튜터 성향 뽑아서 instruction에 넣기
         String setInstruction = assistantService.setInstruction(gptInstruction, nonNullFields);
@@ -132,7 +131,6 @@ public class RealController {
             System.out.println("fileId = " + fileId);
             ArrayList<String> fileIds = new ArrayList<>();
             fileIds.add(fileId);
-
             //메시지 생성
             assistantService.createMessages(threadId, new MessagesRequestDto("user", getMessageDto.getContent(), fileIds));
         }
@@ -192,85 +190,15 @@ public class RealController {
     //어시스턴트 수정
     //1) openAI 수정
     //2) DB 수정
+    //변경 된 거 없어도 그대로 값 들고 옴. 필드 삭제되었을 때만 프론트에서 아예 해당 객체 보내지 않음(null)
     @PutMapping("/assistants/{assistantId}/info/page")
     public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws JSONException, IllegalAccessException {
 
         Assistant findOne = realService.findById(assistantId);
-        String setInstruction = "";
+        String oldInstruction = findOne.getInstruction();
 
-        //변경 된 거 없어도 그대로 값 들고 옴. 필드 삭제되었을 때만 프론트에서 아예 해당 객체 보내지 않음(null)
         realService.updateAssistant(assistantId, modifyRequestDto);
 
-
-
-
-        //튜터 성향에 관한 수정 사항 검증 + instruction과 함께 수정 들어가야 함
-
-        /*
-        //instruction 변경 검증
-        if(!modifyRequestDto.getInstruction().equals(findOne.getInstruction())){
-            realService.modifyAssistantInstruction(modifyRequestDto.getInstruction(), assistantId);
-
-            //personality, speechLevel 둘 다 수정된 경우
-            if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-                setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), modifyRequestDto.getPersonality().toString(), modifyRequestDto.getSpeechLevel().toString());
-                modifyRequestDto.setInstruction(setInstruction);
-                realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
-                realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
-            }
-            //personality만 수정된 경우
-            else if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-                setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), modifyRequestDto.getPersonality().toString(), speechLevel.toString());
-                modifyRequestDto.setInstruction(setInstruction);
-                realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
-            }
-            //speechLevel만 수정된 경우
-            else if(personality != null && speechLevel != null && personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-                setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), personality.toString(), modifyRequestDto.getSpeechLevel().toString());
-                modifyRequestDto.setInstruction(setInstruction);
-                realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
-            }
-            //둘 다 수정 안된 경우
-            else {
-                setInstruction = assistantService.setInstruction(modifyRequestDto.getInstruction(), findOne.getPersonality().toString(), findOne.getSpeechLevel().toString());
-                modifyRequestDto.setInstruction(setInstruction);
-            }
-        } else{ //insturction이 변경 안 된 경우
-            //personality, speechLevel 둘 다 수정된 경우
-            if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-                setInstruction = assistantService.setInstruction(findOne.getInstruction(), modifyRequestDto.getPersonality().toString(), modifyRequestDto.getSpeechLevel().toString());
-                modifyRequestDto.setInstruction(setInstruction);
-                realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
-                realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
-            }
-            //personality만 수정된 경우
-            else if(personality != null && speechLevel != null && !personality.equals(modifyRequestDto.getPersonality()) && speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-                setInstruction = assistantService.setInstruction(findOne.getInstruction(), modifyRequestDto.getPersonality().toString(), speechLevel.toString());
-                modifyRequestDto.setInstruction(setInstruction);
-                realService.modifyAssistantPersonality(modifyRequestDto.getPersonality(), assistantId);
-            }
-            //speechLevel만 수정된 경우
-            else if(personality != null && speechLevel != null && personality.equals(modifyRequestDto.getPersonality()) && !speechLevel.equals(modifyRequestDto.getSpeechLevel())){
-                setInstruction = assistantService.setInstruction(findOne.getInstruction(), personality.toString(), modifyRequestDto.getSpeechLevel().toString());
-                modifyRequestDto.setInstruction(setInstruction);
-                realService.modifyAssistantSpeechLevel(modifyRequestDto.getSpeechLevel(), assistantId);
-            }
-        }
-
-         */
-//
-//        //이름 변경 검증
-//        if(!modifyRequestDto.getName().equals(findOne.getName())){
-//            realService.modifyAssistantName(modifyRequestDto.getName(), assistantId);
-//        }
-//        //description 변경 검증
-//        if(!modifyRequestDto.getDescription().equals(findOne.getDescription())){
-//            realService.modifyAssistantDescription(modifyRequestDto.getDescription(), assistantId);
-//        }
-//        //voice 변경 검증
-//        if(!modifyRequestDto.getVoice().equals(findOne.getVoice())){
-//            realService.modifyAssistantVoice(modifyRequestDto.getVoice(), assistantId);
-//        }
         //파일 변경 검증
         if(modifyRequestDto.getFile1() != null){ //새로 들어오는 파일 경로가 있으면
             ResponseEntity<Object> response = fileService.uploadFile(modifyRequestDto.getFile1());
@@ -304,11 +232,14 @@ public class RealController {
                 realService.modifyAssistantHasFileFalse(assistantId);
             }
         }
-
-        //최종 어시스턴트 수정
-        if(!modifyRequestDto.getInstruction().equals(findOne.getInstruction())){
+        //insturction 변경 사항 여부 체크하면서 최종 어시스턴트 수정
+        if(!modifyRequestDto.getInstruction().equals(oldInstruction)){
+            Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFieldsWhenModify(modifyRequestDto);
             String gptInstruction = assistantService.getGptInstruction(modifyRequestDto.getInstruction()).join();
-            modifyRequestDto.setInstruction(gptInstruction);
+
+            String setInstruction = assistantService.setInstruction(gptInstruction, nonNullFields);
+
+            modifyRequestDto.setInstruction(setInstruction);
             ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
             return ResponseEntity.ok(res);
         } else{

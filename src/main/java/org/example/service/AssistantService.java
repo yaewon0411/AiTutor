@@ -34,13 +34,14 @@ import java.util.function.Supplier;
 public class AssistantService {
 
     private final AssistantsClient assistantsClient;
-    private String assistantModel = "gpt-4";
+    private String model = "gpt-3.5-turbo";
+    private String audioModel = "tts-1";
 
     public ResponseEntity<Object> createAssistant(AssistantCreateRequestDto assistantCreateRequestDto) {
         try {
             Object res = assistantsClient.createAssistants (
                     new AssistantsRequestDto(
-                            assistantModel,
+                            model,
                             assistantCreateRequestDto.getName(),
                             assistantCreateRequestDto.getInstruction(),
                             Arrays.asList(new Tool("code_interpreter")),
@@ -67,7 +68,7 @@ public class AssistantService {
             Object res = assistantsClient.modifyAssistant(assistantId,
                     new AssistantModifyRequestDto(
                             assistantModifyRequestDto.getInstruction(),
-                            assistantModel,
+                            model,
                             assistantModifyRequestDto.getFileIds(),
                             assistantModifyRequestDto.getDescription(),
                             Arrays.asList(new Tool("code_interpreter")),
@@ -118,7 +119,7 @@ public class AssistantService {
     public ResponseEntity<Object> createMessages(String threadId, MessagesRequestDto messagesRequestDto) {
         try {
             MessagesResponseDto res;
-            System.out.println("messagesRequestDto = " + messagesRequestDto.getFile_ids().size());
+            System.out.println("messagesRequestDto = " + messagesRequestDto.getContent());
             System.out.println("messagesRequestDto.toString() = " + messagesRequestDto.toString());
 
             res = assistantsClient.createMessages(
@@ -130,8 +131,6 @@ public class AssistantService {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
 
 
     public ResponseEntity<Object> getMessagesList(String threadId) {
@@ -178,7 +177,7 @@ public class AssistantService {
 
     public ResponseEntity<Object> createSpeech(AudioRequestDto audioRequestDto, String voice) {
         byte[] res= assistantsClient.createSpeech(new AudioRequestDto(
-                "tts-1",
+                audioModel,
                 audioRequestDto.getInput(),
                 voice
         ));
@@ -189,7 +188,7 @@ public class AssistantService {
     //그냥 바로 바이트 배열로 반환하는 것도 프론트랑 테스트 해볼 것
     public byte[] createSpeech2(AudioRequestDto audioRequestDto, String voice) {
         byte[] res = assistantsClient.createSpeech(new AudioRequestDto(
-                "tts-1",
+                audioModel,
                 audioRequestDto.getInput(),
                 voice
         ));
@@ -267,21 +266,10 @@ public class AssistantService {
     }
 
 
-
-    //어시스턴트 name, description, instruction, files_ids만 내보내면 됨
-    public void getAssistantInfo(ResponseEntity<Object> assistant) {
-
-        JSONObject object = new JSONObject(Objects.requireNonNull(assistant.getBody()));
-
-        //만드는 중!!!
-    }
-    //
     public String setInstruction(String instruction, Map<String, Enum<?>> nonNullFields) {
         System.out.println("setInstruction 실행!!!");
         String res = instruction + "\n *지침 : ";
         for (Enum<?> value : nonNullFields.values()) {
-            System.out.print("value.toString() = " + value.toString());
-            System.out.println("  value.getClass().toString() = " + value.getClass().toString());
             if(value.getClass().equals(AnswerDetail.class)){
                 res += "당신은 답변하는 내용을 "+value+" 식으로 제공하셔야 합니다.\n";
             }
@@ -320,6 +308,7 @@ public class AssistantService {
                 }
             }
         }
+        res += "* 만약 사용자가 대화 시 파일을 첨부한다면, 이는 utf-8로 인코딩된 파일일 것입니다. 이를 감안해주시기 바랍니다.";
 
         return res;
     }
@@ -337,7 +326,7 @@ public class AssistantService {
                     response.getChoices().get(0).getMessage().getContent());
     }
 
-    public Map<String, Enum<?>> getNonNullFields(AssistantCreateDto assistantCreateDto) {
+    public Map<String, Enum<?>> getNonNullFieldsWhenCreate(AssistantCreateDto assistantCreateDto) {
 
         Map<String, Enum<?>> nonNullFields = new HashMap<>();
         Field[] fields = assistantCreateDto.getClass().getDeclaredFields();
@@ -346,6 +335,27 @@ public class AssistantService {
                 try{
                     field.setAccessible(true);
                     Object value = field.get(assistantCreateDto);
+                    if(value != null){
+                        nonNullFields.put(field.getName(), (Enum<?>)value);
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return nonNullFields;
+    }
+
+    public Map<String, Enum<?>> getNonNullFieldsWhenModify(ModifyRequestDto modifyRequestDto) {
+
+        Map<String, Enum<?>> nonNullFields = new HashMap<>();
+        Field[] fields = modifyRequestDto.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            if(field.getType().isEnum()){
+                try{
+                    field.setAccessible(true);
+                    Object value = field.get(modifyRequestDto);
                     if(value != null){
                         nonNullFields.put(field.getName(), (Enum<?>)value);
                     }
@@ -379,16 +389,6 @@ public class AssistantService {
             chatDto.setAnswer(response);
             return chatDto;
         });
-    }
-    public CompletableFuture<MessagesResponseDto> createMessage2(String threadId, MessagesRequestDto messagesRequestDto){
-        return CompletableFuture.supplyAsync(() -> createMessages(threadId, messagesRequestDto))
-                .thenComposeAsync(response -> {
-                    return (CompletionStage<MessagesResponseDto>) response;
-                });
-
-    }
-    public MessagesResponseDto processCreateMessage(String threadId, MessagesRequestDto messagesRequestDto){
-        return createMessage2(threadId, messagesRequestDto).join();
     }
 
 
