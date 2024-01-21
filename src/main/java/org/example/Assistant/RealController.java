@@ -59,8 +59,6 @@ public class RealController {
             hasFile = true;
             ResponseEntity<Object> response = fileService.uploadFile(assistantCreateDto.getFile1());
             String fileId = fileService.getFileId(response);
-            AIassistantCreateDto.setTools(Arrays.asList(
-                    new Tool("code_interpreter")));
             AIassistantCreateDto.getFileIds().add(fileId);
             if(assistantCreateDto.getFile2()!=null){
                 ResponseEntity<Object> response2 = fileService.uploadFile(assistantCreateDto.getFile2());
@@ -80,7 +78,7 @@ public class RealController {
                 Assistant.builder().id(assistantId).name(assistantCreateDto.getName()).img(imgUrl).description(assistantCreateDto.getDescription())
                 .instruction(assistantCreateDto.getInstruction()).hasFile(hasFile);
 
-        for (Map.Entry<String, Enum<?>> entry : nonNullFields.entrySet()) {
+            for (Map.Entry<String, Enum<?>> entry : nonNullFields.entrySet()) {
             String fieldName = entry.getKey();
             Enum<?> fieldValue = entry.getValue();
             try {
@@ -209,8 +207,6 @@ public class RealController {
             }
             //hasFile = true 설정
             realService.modifyAssistantHasFileTrue(assistantId);
-//            modifyRequestDto.setTools(Arrays.asList( // -> 생성될 때부터 code interpreter로 설정됨
-//                    new Tool("code_interpreter")));
         } else{ //새로 들어오는 파일이 없으면 -> 삭제된 거 있나 확인
 
             ResponseEntity<Object> response = assistantService.searchAssistant(assistantId);
