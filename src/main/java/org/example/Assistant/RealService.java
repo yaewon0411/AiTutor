@@ -52,7 +52,9 @@ public class RealService {
     @Transactional(readOnly = true)
     public TutorInfoDto getTutorInfo(String assistantId){
         Assistant findOne = findById(assistantId);
-        return new TutorInfoDto(findOne.getName(), findOne.getImg(), findOne.getDescription(), findOne.getPersonality(),findOne.getSpeechLevel(),findOne.getVoice());
+        return new TutorInfoDto(findOne.getName(), findOne.getImg(), findOne.getDescription(), findOne.getPersonality(),findOne.getSpeechLevel(),findOne.getVoice(),
+                findOne.getAnswerDetail(), findOne.getConversationalStyle(), findOne.getEmoji(), findOne.getEmotionalExpression(), findOne.getLanguageMode(),
+                findOne.getRoleplay(), findOne.getUseOfTechnicalLanguage());
     }
 
     //튜터 수정 화면에 뿌려지는 정보
@@ -70,7 +72,6 @@ public class RealService {
         else return "onyx";
     }
 
-
     public void modifyAssistantImg(String assistantId, String img) {
         assistantRepository.updateAssistantImgById(assistantId, img);
     }
@@ -81,10 +82,13 @@ public class RealService {
 
 
     public void modifyAssistantHasFileTrue(String assistantId) {
-        assistantRepository.updateAssistantHasFileTrueById(assistantId);
+        Assistant findOne = findById(assistantId);
+        findOne.setHasFileTure();
     }
+
     public void modifyAssistantHasFileFalse(String assistantId){
-        assistantRepository.updateAssistantHasFileFalseById(assistantId);
+        Assistant findOne = findById(assistantId);
+        findOne.setHasFileFalse();
     }
 
     public List<ShowHomeDto> searchByKeyword(String keyword){
@@ -97,21 +101,11 @@ public class RealService {
         return showHomeDtoList;
     }
 
-    @Transactional
+
     public void updateAssistant(String assistantId, ModifyRequestDto modifyRequestDto) throws IllegalAccessException {
-        Assistant findOne = assistantRepository.findById(assistantId).get();
-        if(findOne == null) throw new IllegalAccessException("해당 튜터를 찾을 수 없습니다.");
+        Assistant findOne = findById(assistantId);
 
         BeanUtils.copyProperties(modifyRequestDto, findOne, "id");
-
-        if(modifyRequestDto.getPersonality() == null) findOne.setPersonality(null);
-        if(modifyRequestDto.getSpeechLevel() == null) findOne.setSpeechLevel(null);
-        if(modifyRequestDto.getAnswerDetail() == null) findOne.setAnswerDetail(null);
-        if(modifyRequestDto.getConversationalStyle() == null) findOne.setConversationalStyle(null);
-        if(modifyRequestDto.getEmoji() == null) findOne.setEmoji(null);
-        if(modifyRequestDto.getEmotionalExpression() == null) findOne.setEmotionalExpression(null);
-        if(modifyRequestDto.getLanguageMode() == null) findOne.setLanguageMode(null);
-        if(modifyRequestDto.getUseOfTechnicalLanguage() == null) findOne.setUseOfTechnicalLanguage(null);
 
         //변경 사항 적용
         assistantRepository.save(findOne);

@@ -383,7 +383,7 @@ public class AssistantService {
                     }
                 });
     }
-    public CompletableFuture<ChatDto> getMessage(String threadId, String runId){
+    public CompletableFuture<ChatDto> getRunStatusToGetMessage(String threadId, String runId){
         return checkRunStatus(threadId, runId).thenApplyAsync(response ->{
             ChatDto chatDto = new ChatDto();
             chatDto.setAnswer(response);

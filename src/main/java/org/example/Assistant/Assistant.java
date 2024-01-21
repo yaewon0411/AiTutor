@@ -56,6 +56,7 @@ public class Assistant {
     public void setHasFileTure(){
         this.hasFile = true;
     }
+    public void setHasFileFalse(){this.hasFile = false;}
 
 
 }

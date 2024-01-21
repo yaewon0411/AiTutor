@@ -139,7 +139,7 @@ public class RealController {
         //런 아이디 꺼내기
         String runId = assistantService.getRunId(runs);
         //런 실행 상태 추적 후 답변 얻기
-        ChatDto chatDto= assistantService.getMessage(threadId, runId).join();
+        ChatDto chatDto= assistantService.getRunStatusToGetMessage(threadId, runId).join();
 
         //음성으로 질문한 거라면
         if(getMessageDto.getIsVoice().equals("true")){
@@ -209,8 +209,8 @@ public class RealController {
             }
             //hasFile = true 설정
             realService.modifyAssistantHasFileTrue(assistantId);
-            modifyRequestDto.setTools(Arrays.asList(
-                    new Tool("code_interpreter")));
+//            modifyRequestDto.setTools(Arrays.asList( // -> 생성될 때부터 code interpreter로 설정됨
+//                    new Tool("code_interpreter")));
         } else{ //새로 들어오는 파일이 없으면 -> 삭제된 거 있나 확인
 
             ResponseEntity<Object> response = assistantService.searchAssistant(assistantId);
