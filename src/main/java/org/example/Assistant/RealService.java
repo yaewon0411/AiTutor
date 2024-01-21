@@ -1,17 +1,16 @@
 package org.example.Assistant;
 
-import com.fasterxml.jackson.databind.util.BeanUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.example.Assistant.Enum.Personality;
-import org.example.Assistant.Enum.SpeechLevel;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.example.Assistant.Enum.Voice;
 import org.example.Assistant.dto.*;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -103,10 +102,29 @@ public class RealService {
 
 
     public void updateAssistant(String assistantId, ModifyRequestDto modifyRequestDto) throws IllegalAccessException {
+
         Assistant findOne = findById(assistantId);
+        try{
+            //원본 객체 프로퍼티 get
+            PropertyDescriptor[] propertyDescriptors = PropertyUtils.getPropertyDescriptors(modifyRequestDto);
 
-        BeanUtils.copyProperties(modifyRequestDto, findOne, "id");
+            for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
+                String name = propertyDescriptor.getName();
+                if(name.equals("class")){
+                    continue;
+                }
 
+                Object value = PropertyUtils.getProperty(modifyRequestDto, name);
+                if(value == null){
+                    BeanUtils.setProperty(findOne, name, null);
+                } else{
+                    BeanUtils.copyProperty(findOne, name, value);
+                }
+            }
+
+        }catch (Exception e){
+            throw new RuntimeException("Property copy with null handling failed",e);
+        }
         //변경 사항 적용
         assistantRepository.save(findOne);
     }

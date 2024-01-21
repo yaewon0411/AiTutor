@@ -309,10 +309,10 @@ public class AssistantService {
     }
     public CompletableFuture<String> getGptInstruction(String instruction){
         return CompletableFuture.supplyAsync(()-> assistantsClient.createChat(new GptRequestDto(
-                "gpt-3.5-turbo",
+                model,
                 Arrays.asList(new MessageDto(
                         "system","내가 AI 의 정체성을 설정하는 특정 문장을 주면, " +
-                        "너는 이 짧은 문장에 대해 더더욱 살을 붙여서 최대한 긴 문장으로(현재 문자수 기준으로 4배 분량) 재생산해줘." +
+                        "너는 이 짧은 문장에 대해 더더욱 살을 붙여서 최대한 긴 문장으로(현재 문자수 기준으로 4배 분량) 재생산 해줘." +
                         "이 때 본격적으로 재생산된 특정 문장을 얘기하기 전엔 큰따옴표(\"\")로 감싸줘. "),
                         new MessageDto("user",instruction))
                 ,

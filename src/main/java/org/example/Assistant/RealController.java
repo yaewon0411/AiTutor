@@ -21,6 +21,7 @@ import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin
 public class RealController {
 
     private final AssistantService assistantService;
@@ -187,6 +188,7 @@ public class RealController {
     public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws JSONException, IllegalAccessException {
 
         realService.updateAssistant(assistantId, modifyRequestDto);
+
         Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFieldsWhenModify(modifyRequestDto);
         String gptInstruction = assistantService.getGptInstruction(modifyRequestDto.getInstruction()).join();
         String setInstruction = assistantService.setInstruction(gptInstruction, nonNullFields);
