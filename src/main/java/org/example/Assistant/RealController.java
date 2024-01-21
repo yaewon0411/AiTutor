@@ -121,7 +121,6 @@ public class RealController {
         if(getMessageDto.getFile() != null){
             ResponseEntity<Object> response = fileService.uploadFile(getMessageDto.getFile());
             String fileId = fileService.getFileId(response);
-            System.out.println("fileId = " + fileId);
             ArrayList<String> fileIds = new ArrayList<>();
             fileIds.add(fileId);
             //메시지 생성
@@ -187,10 +186,10 @@ public class RealController {
     @PutMapping("/assistants/{assistantId}/info/page")
     public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws JSONException, IllegalAccessException {
 
-        Assistant findOne = realService.findById(assistantId);
-        String oldInstruction = findOne.getInstruction();
-
-        realService.updateAssistant(assistantId, modifyRequestDto);
+        Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFieldsWhenModify(modifyRequestDto);
+        String gptInstruction = assistantService.getGptInstruction(modifyRequestDto.getInstruction()).join();
+        String setInstruction = assistantService.setInstruction(gptInstruction, nonNullFields);
+        modifyRequestDto.setInstruction(setInstruction);
 
         //파일 변경 검증
         if(modifyRequestDto.getFile1() != null){ //새로 들어오는 파일 경로가 있으면
@@ -223,23 +222,13 @@ public class RealController {
                 realService.modifyAssistantHasFileFalse(assistantId);
             }
         }
-        //insturction 변경 사항 여부 체크하면서 최종 어시스턴트 수정
-        if(!modifyRequestDto.getInstruction().equals(oldInstruction)){
-            Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFieldsWhenModify(modifyRequestDto);
-            String gptInstruction = assistantService.getGptInstruction(modifyRequestDto.getInstruction()).join();
 
-            String setInstruction = assistantService.setInstruction(gptInstruction, nonNullFields);
-
-            modifyRequestDto.setInstruction(setInstruction);
-            ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
-            return ResponseEntity.ok(res);
-        } else{
-            ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
-            return ResponseEntity.ok(res);
-        }
+        realService.updateAssistant(assistantId, modifyRequestDto);
+        ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
+        return ResponseEntity.ok(res);
     }
 
-    //사용자가 튜터 이미지를 변경했을 때만 작돟하도록 프론트에서 설정
+    //사용자가 튜터 이미지를 변경했을 때만 작동
     @PutMapping("/assistants/{assistantId}/info/page/image")
     public ResponseEntity<Object> modifyAssistantImage(@PathVariable("assistantId")String assistantId, @RequestParam("imgFile")MultipartFile file ) throws MalformedURLException {
 
