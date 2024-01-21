@@ -186,6 +186,7 @@ public class RealController {
     @PutMapping("/assistants/{assistantId}/info/page")
     public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws JSONException, IllegalAccessException {
 
+        realService.updateAssistant(assistantId, modifyRequestDto);
         Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFieldsWhenModify(modifyRequestDto);
         String gptInstruction = assistantService.getGptInstruction(modifyRequestDto.getInstruction()).join();
         String setInstruction = assistantService.setInstruction(gptInstruction, nonNullFields);
@@ -223,7 +224,6 @@ public class RealController {
             }
         }
 
-        realService.updateAssistant(assistantId, modifyRequestDto);
         ResponseEntity<Object> res = assistantService.modifyAssistant(assistantId, modifyRequestDto);
         return ResponseEntity.ok(res);
     }

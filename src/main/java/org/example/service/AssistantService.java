@@ -118,11 +118,7 @@ public class AssistantService {
 
     public ResponseEntity<Object> createMessages(String threadId, MessagesRequestDto messagesRequestDto) {
         try {
-            MessagesResponseDto res;
-            System.out.println("messagesRequestDto = " + messagesRequestDto.getContent());
-            System.out.println("messagesRequestDto.toString() = " + messagesRequestDto.toString());
-
-            res = assistantsClient.createMessages(
+            MessagesResponseDto res= assistantsClient.createMessages(
                     threadId,
                     messagesRequestDto);
             System.out.println("res.toString() = " + res.toString());
@@ -131,7 +127,6 @@ public class AssistantService {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 
     public ResponseEntity<Object> getMessagesList(String threadId) {
         try {
