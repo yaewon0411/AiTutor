@@ -1,5 +1,6 @@
 package org.example.openAI;
 
+import feign.Response;
 import org.example.Assistant.dto.GptRequestDto;
 import org.example.Assistant.dto.GptResponseDto;
 import org.example.model.dto.audio.AudioRequestDto;
@@ -7,7 +8,6 @@ import org.example.model.dto.openai.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.cloud.openfeign.FeignClient;
-
 
 @FeignClient(name = "OpenAiAssistantsClient", url = "https://api.openai.com/v1", configuration = AssistantHeaderConfiguration.class)
 public interface AssistantsClient {
@@ -17,7 +17,6 @@ public interface AssistantsClient {
     @PostMapping("/assistants")
     AssistantResponseDto createAssistants(@RequestBody AssistantsRequestDto assistantsRequestDto);
 
-    //코드 인터프리터가 적용된 어시스턴트에만 파일 attach 됨..
     @PostMapping("/assistants/{assistantId}/files")
     AssistantFileResponseDto attachFileToAssistant(@PathVariable("assistantId") String assistantId, @RequestBody AssistantFileRequestDto assistantFileRequestDto);
 

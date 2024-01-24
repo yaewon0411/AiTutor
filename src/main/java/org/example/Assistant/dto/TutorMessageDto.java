@@ -11,5 +11,5 @@ import org.springframework.http.ResponseEntity;
 @AllArgsConstructor
 public class TutorMessageDto {
     private ChatDto chatDto;
-    private byte[] speech;
+    private String speech;
 }

@@ -48,6 +48,10 @@ public class AssistantCreateDto {
     @Nullable
     private UseOfTechnicalLanguage useOfTechnicalLanguage;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Nullable
+    private ResponseLength responseLength;
+
     @NotNull
     private Voice voice;
     @NotNull

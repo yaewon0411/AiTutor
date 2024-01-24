@@ -88,4 +88,10 @@ public class ModifyRequestDto {
     @Nullable
     private Voice voice;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Nullable
+    private ResponseLength responseLength;
+
+
+
 }

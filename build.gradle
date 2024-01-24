@@ -42,6 +42,8 @@ dependencies {
 
 // H2 데이터베이스
     //implementation 'com.h2database:h2:2.1.214'
+    implementation 'commons-beanutils:commons-beanutils:1.9.4'
+    implementation 'org.modelmapper:modelmapper:3.0.0'
 
 
     implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'

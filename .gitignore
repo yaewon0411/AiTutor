@@ -11,9 +11,12 @@ out/
 gradle/
 
 application.yml
+application-develop.yml
+application-prod.yml
 AssistantHeaderConfiguration.java
 FileHeaderConfiguration.java
 config/
+
 
 *.log
 *.tmp

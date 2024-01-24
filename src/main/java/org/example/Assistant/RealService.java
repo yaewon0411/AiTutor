@@ -53,7 +53,7 @@ public class RealService {
         Assistant findOne = findById(assistantId);
         return new TutorInfoDto(findOne.getName(), findOne.getImg(), findOne.getDescription(), findOne.getPersonality(),findOne.getSpeechLevel(),findOne.getVoice(),
                 findOne.getAnswerDetail(), findOne.getConversationalStyle(), findOne.getEmoji(), findOne.getEmotionalExpression(), findOne.getLanguageMode(),
-                findOne.getRoleplay(), findOne.getUseOfTechnicalLanguage());
+                findOne.getRoleplay(), findOne.getUseOfTechnicalLanguage(), findOne.getResponseLength());
     }
 
     //튜터 수정 화면에 뿌려지는 정보
@@ -113,7 +113,6 @@ public class RealService {
                 if(name.equals("class")){
                     continue;
                 }
-
                 Object value = PropertyUtils.getProperty(modifyRequestDto, name);
                 if(value == null){
                     BeanUtils.setProperty(findOne, name, null);

@@ -57,4 +57,8 @@ public class TutorInfoDto {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private UseOfTechnicalLanguage useOfTechnicalLanguage;
 
+    @Nullable
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private ResponseLength responseLength;
+
 }

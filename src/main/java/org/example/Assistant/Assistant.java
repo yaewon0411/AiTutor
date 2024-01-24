@@ -16,8 +16,11 @@ public class Assistant {
     private String name;
     @Column(name="assistant_img")
     private String img;
-    //512자로 제한하는 거 걸기
+
     private String description;
+
+    //1000자로 제한
+    @Column(length = 1000)
     private String instruction;
 
     private boolean hasFile;
@@ -52,6 +55,9 @@ public class Assistant {
 
     @Enumerated(EnumType.STRING)
     private UseOfTechnicalLanguage useOfTechnicalLanguage;
+
+    @Enumerated(EnumType.STRING)
+    private ResponseLength responseLength;
 
     public void setHasFileTure(){
         this.hasFile = true;

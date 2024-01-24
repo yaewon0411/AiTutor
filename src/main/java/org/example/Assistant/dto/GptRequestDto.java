@@ -13,5 +13,6 @@ public class GptRequestDto {
     private String model;
     private List<MessageDto> messages;
     private int n;
+    private int max_tokens;
 
 }

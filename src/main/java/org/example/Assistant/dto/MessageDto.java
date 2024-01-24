@@ -10,5 +10,4 @@ import lombok.NoArgsConstructor;
 public class MessageDto {
     private String role;
     private String content;
-
 }

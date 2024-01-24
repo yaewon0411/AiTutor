@@ -23,6 +23,10 @@ public class TutorModifyDto {
     private Voice voice;
     private String instruction;
     private List<String> fileNames = new ArrayList<>();
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<String> fileIds = new ArrayList<>();
+
+    private String model;
 
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -52,12 +56,8 @@ public class TutorModifyDto {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private UseOfTechnicalLanguage useOfTechnicalLanguage;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private ResponseLength responseLength;
 
-    public TutorModifyDto(String name, String img, String description, Voice voice, String instruction) {
-        this.name = name;
-        this.img = img;
-        this.description = description;
-        this.voice = voice;
-        this.instruction = instruction;
-    }
+
 }
