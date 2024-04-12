@@ -5,8 +5,7 @@ import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-import org.example.Assistant.Enum.*;
+import org.example.domain.Enum.*;
 
 @Data
 @NoArgsConstructor

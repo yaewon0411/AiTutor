@@ -5,6 +5,7 @@ import org.example.model.dto.openai.ChatRequestDto;
 import org.example.model.dto.openai.EmbeddingRequestDto;
 import org.example.model.dto.openai.EmbeddingResponseDto;
 import org.example.model.dto.openai.ResponseChatDto;
+import org.example.openAI.assistant.AssistantHeaderConfiguration;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;

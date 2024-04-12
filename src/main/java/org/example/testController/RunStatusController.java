@@ -1,7 +1,7 @@
 package org.example.testController;
 
 import lombok.RequiredArgsConstructor;
-import org.example.openAI.AssistantsClient;
+import org.example.openAI.assistant.AssistantsClient;
 import org.example.model.dto.openai.RunsResponseDto;
 import org.springframework.web.bind.annotation.RestController;
 

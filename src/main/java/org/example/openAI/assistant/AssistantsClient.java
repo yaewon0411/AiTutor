@@ -1,6 +1,5 @@
-package org.example.openAI;
+package org.example.openAI.assistant;
 
-import feign.Response;
 import org.example.Assistant.dto.GptRequestDto;
 import org.example.Assistant.dto.GptResponseDto;
 import org.example.model.dto.audio.AudioRequestDto;

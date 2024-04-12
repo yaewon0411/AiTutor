@@ -2,10 +2,9 @@ package org.example.Assistant.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.Null;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.Assistant.Enum.*;
+import org.example.domain.Enum.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;

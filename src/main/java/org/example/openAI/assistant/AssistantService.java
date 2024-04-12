@@ -1,16 +1,9 @@
-package org.example.service;
+package org.example.openAI.assistant;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import feign.FeignException;
-import feign.Response;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.bridge.Message;
-import org.example.Assistant.Enum.*;
+import org.example.domain.Enum.*;
 import org.example.Assistant.dto.*;
-import org.example.openAI.AssistantsClient;
 import org.example.model.dto.*;
 import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.*;
@@ -22,16 +15,12 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor

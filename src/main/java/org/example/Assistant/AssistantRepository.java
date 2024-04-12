@@ -1,9 +1,9 @@
 package org.example.Assistant;
 
-import org.example.Assistant.Enum.Personality;
-import org.example.Assistant.Enum.SpeechLevel;
-import org.example.Assistant.Enum.Voice;
-import org.springframework.data.domain.Example;
+import org.example.domain.Enum.Personality;
+import org.example.domain.Enum.SpeechLevel;
+import org.example.domain.Enum.Voice;
+import org.example.domain.Assistant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

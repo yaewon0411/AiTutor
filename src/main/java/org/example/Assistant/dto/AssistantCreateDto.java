@@ -5,7 +5,7 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.Assistant.Enum.*;
+import org.example.domain.Enum.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data

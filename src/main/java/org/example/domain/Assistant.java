@@ -1,8 +1,8 @@
-package org.example.Assistant;
+package org.example.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.example.Assistant.Enum.*;
+import org.example.domain.Enum.*;
 
 @Entity
 @NoArgsConstructor
@@ -11,9 +11,12 @@ import org.example.Assistant.Enum.*;
 @Builder
 public class Assistant {
     @Id @Column(name = "assistant_id")
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private String id;
+
     @Column(name="assistant_name")
     private String name;
+
     @Column(name="assistant_img")
     private String img;
 

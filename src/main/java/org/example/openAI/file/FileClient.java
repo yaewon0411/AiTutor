@@ -1,4 +1,4 @@
-package org.example.openAI;
+package org.example.openAI.file;
 
 import org.example.model.dto.file.FilePathDto;
 import org.example.model.dto.file.FileResponseDto;

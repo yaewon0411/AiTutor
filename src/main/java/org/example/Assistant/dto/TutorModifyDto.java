@@ -1,13 +1,10 @@
 package org.example.Assistant.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.Assistant.Enum.*;
+import org.example.domain.Enum.*;
 
 import java.util.ArrayList;
 import java.util.List;

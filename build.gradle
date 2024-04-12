@@ -30,8 +30,6 @@ dependencies {
     implementation "io.github.openfeign.form:feign-form:3.8.0"
     implementation 'org.json:json:20211205'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    // Hibernate
-    //implementation 'org.hibernate:hibernate-entitymanager:6.4.1.Final'
     runtimeOnly 'com.h2database:h2'
     implementation 'com.h2database:h2'
 

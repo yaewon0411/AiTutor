@@ -1,4 +1,4 @@
-package org.example.Assistant.Enum;
+package org.example.domain.Enum;
 
 public enum Personality {
     Kindness,

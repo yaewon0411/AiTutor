@@ -1,7 +1,7 @@
-package org.example.service;
+package org.example.openAI.file;
 
 import lombok.RequiredArgsConstructor;
-import org.example.openAI.FileClient;
+import org.example.openAI.file.FileClient;
 import org.example.model.dto.file.FilePathDto;
 import org.json.JSONObject;
 import org.springframework.http.*;

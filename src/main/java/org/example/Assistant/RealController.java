@@ -1,13 +1,13 @@
 package org.example.Assistant;
 
-import feign.Response;
 import lombok.RequiredArgsConstructor;
 import org.example.Assistant.dto.*;
+import org.example.domain.Assistant;
 import org.example.model.dto.*;
 import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.*;
-import org.example.service.AssistantService;
-import org.example.service.FileService;
+import org.example.openAI.assistant.AssistantService;
+import org.example.openAI.file.FileService;
 import org.example.service.S3Service;
 import org.json.JSONException;
 import org.springframework.http.ResponseEntity;

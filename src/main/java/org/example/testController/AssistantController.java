@@ -2,21 +2,15 @@ package org.example.testController;
 
 import lombok.RequiredArgsConstructor;
 import org.example.Assistant.RealService;
-import org.example.Assistant.dto.TutorMessageDto;
 import org.example.model.dto.AssistantCreateRequestDto;
-import org.example.model.dto.ChatDto;
 import org.example.model.dto.CreateRunsRequestDto;
-import org.example.model.dto.audio.AudioRequestDto;
-import org.example.model.dto.getMessageDto;
 import org.example.model.dto.openai.*;
 import org.example.Assistant.dto.ModifyRequestDto;
-import org.example.service.AssistantService;
-import org.example.service.FileService;
+import org.example.openAI.assistant.AssistantService;
+import org.example.openAI.file.FileService;
 import org.example.service.S3Service;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
 
 @RestController
 @RequiredArgsConstructor
