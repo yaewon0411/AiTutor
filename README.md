@@ -8,6 +8,7 @@
 ## UI
 <img width="968" alt="image" src="https://github.com/yaewon0411/AiTutor/assets/44336444/4c7cd08c-f6ab-45eb-ac63-048502c39d77">
 
+- API 명세 : https://www.notion.so/API-1e1fced75b94426eaf34e8ca2fd9a53e?pvs=4
 
 ## 기능
 - 튜터 생성/수정
