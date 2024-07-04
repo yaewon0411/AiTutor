@@ -22,6 +22,7 @@ import java.util.*;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin
+@RequestMapping("/assistants")
 public class RealController {
 
     private final AssistantService assistantService;
@@ -31,20 +32,20 @@ public class RealController {
 
     
     //홈 화면 - 어시스턴트 리스트
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<Object> home(){
         return ResponseEntity.ok(realService.findAll());
     }
 
     // gpt한테 instruction울 늘려달라고 요청할 때 사용
-    @PostMapping("/assistants/instruction")
+    @PostMapping("/instructions")
     public ResponseEntity<Object> createGptInstruction(@RequestBody GptInstructionDto gptInstructionDto){
         String getGptInstruction = assistantService.getGptInstruction(gptInstructionDto.getInstruction()).join();
         return ResponseEntity.ok(getGptInstruction);
     }
 
     //TODO: 테스트 하기
-    @PostMapping("/assistants/gpt4")
+    @PostMapping("/instructions/gpt4")
     public ResponseEntity<Object> createAssistantWithModel4(@ModelAttribute AssistantCreateDto assistantCreateDto){
         //enum 타입에 대해서만 필드가 null인지 아닌지 검사
         Map<String, Enum<?>> nonNullFields = assistantService.getNonNullFieldsWhenCreate(assistantCreateDto);
@@ -172,25 +173,25 @@ public class RealController {
         return ResponseEntity.ok(assistantObject);
     }
     //튜터링 화면 - 상세 정보
-    @GetMapping("/assistants/{assistantId}/info")
+    @GetMapping("/{assistantId}/info")
     public ResponseEntity<Object> tutoringInfo(@PathVariable("assistantId")String assistantId){
         TutorInfoDto res = realService.getTutorInfo(assistantId);
         return ResponseEntity.ok(res);
     }
 
     //튜터링 화면 - 채팅방 진입
-    @GetMapping("/assistants/{assistantId}/chat")
+    @GetMapping("/{assistantId}/chats")
     public ResponseEntity<Object> tutoringPage(@PathVariable("assistantId")String assistantId){
         TutoringPageDto res = realService.findByIdInTutoringPage(assistantId);
         return ResponseEntity.ok(res);
     }
     //스레드 생성하기
-    @PostMapping("/assistants/threads")
+    @PostMapping("/threads")
     public ResponseEntity<Object> createThread(){
         return ResponseEntity.ok(assistantService.createThreads().getBody());
     }
     //메시지 보내고 답변 받기 - 파일(사진 등)으로도 질문하는 경우로 수정
-    @PostMapping("/assistants/{threadId}/chat")
+    @PostMapping("/{threadId}/chat")
     public ResponseEntity<Object> getMessage(@PathVariable("threadId") String threadId, @ModelAttribute getMessageDto getMessageDto
     ) throws IllegalAccessException{
         //입력한 파일이 있으면
@@ -227,13 +228,13 @@ public class RealController {
     }
 
     //채팅방 나갈 때 쓰레드 제거
-    @DeleteMapping("/assistants/threads/{threadId}")
+    @DeleteMapping("/threads/{threadId}")
     public ResponseEntity<Object> deleteThread(@PathVariable("threadId")String threadId){
         return ResponseEntity.ok(assistantService.deleteThreads(threadId));
     }
 
     //생성한 어시스턴트 수정 화면에 진입 - 저장된 정보 불러오기
-    @GetMapping("/assistants/{assistantId}/info/page")
+    @GetMapping("/{assistantId}/info/page")
     public ResponseEntity<Object> tutorModifyPage(@PathVariable("assistantId")String assistantId){
 
         List <String> fileNames = new ArrayList<>();
@@ -263,7 +264,7 @@ public class RealController {
     //1) openAI 수정
     //2) DB 수정
     //변경 된 거 없어도 그대로 값 들고 옴. 필드 삭제되었을 때만 프론트에서 아예 해당 객체 보내지 않음(null)
-    @PutMapping("/assistants/{assistantId}/info/page")
+    @PutMapping("/{assistantId}/info/page")
     public ResponseEntity<Object> modifyAssistant(@PathVariable("assistantId")String assistantId, @ModelAttribute ModifyRequestDto modifyRequestDto) throws JSONException, IllegalAccessException {
 
         realService.updateAssistant(assistantId, modifyRequestDto);
@@ -338,7 +339,7 @@ public class RealController {
     }
 
     //사용자가 튜터 이미지를 변경했을 때만 작동
-    @PutMapping("/assistants/{assistantId}/info/page/image")
+    @PatchMapping("/{assistantId}/info/page/image")
     public ResponseEntity<Object> modifyAssistantImage(@PathVariable("assistantId")String assistantId, @RequestParam("imgFile")MultipartFile file ) throws MalformedURLException {
 
         Assistant findOne = realService.findById(assistantId);
@@ -354,7 +355,7 @@ public class RealController {
     }
 
     //어시스턴트 삭제하기
-    @DeleteMapping("/assistants/{assistantId}")
+    @DeleteMapping("/{assistantId}")
     public ResponseEntity<Object> deleteAssistant(@PathVariable("assistantId") String assistantId) throws MalformedURLException {
         //어시스턴트에 붙은 파일 있는 지 먼저 검사
         ResponseEntity<Object> assistant = assistantService.searchAssistant(assistantId);

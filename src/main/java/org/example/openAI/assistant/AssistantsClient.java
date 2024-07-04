@@ -55,9 +55,6 @@ public interface AssistantsClient {
     @GetMapping("/threads/{threadId}/runs/{runId}")
     RunsResponseDto searchRun(@PathVariable("threadId") String threadId, @PathVariable("runId") String runId);
 
-    //@PostMapping(value = "/audio/speech", produces = "audio/mpeg")
-    //byte[] createSpeech(@RequestBody AudioRequestDto audioRequestDto);
-
     @PostMapping(value = "/audio/speech", produces = "audio/mpeg")
     byte[] createSpeech(@RequestBody AudioRequestDto audioRequestDto);
 
