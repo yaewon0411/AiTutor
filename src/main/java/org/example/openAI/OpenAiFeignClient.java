@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
-//@FeignClient(name = "OpenAiClient", url = "https://api.openai.com/v1", configuration = OpenAiHeaderConfiguration.class)
 @FeignClient(name = "OpenAiClient", url = "https://api.openai.com/v1", configuration = AssistantHeaderConfiguration.class)
 public interface OpenAiFeignClient {
 

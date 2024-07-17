@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nullable;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.example.Assistant.dto.Tool;
+import org.example.model.dto.assistant.Tool;
 
 import java.util.List;
 

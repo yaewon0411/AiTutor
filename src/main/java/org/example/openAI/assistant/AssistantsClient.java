@@ -1,7 +1,7 @@
 package org.example.openAI.assistant;
 
-import org.example.Assistant.dto.GptRequestDto;
-import org.example.Assistant.dto.GptResponseDto;
+import org.example.model.dto.assistant.GptRequestDto;
+import org.example.model.dto.assistant.GptResponseDto;
 import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.*;
 import org.springframework.http.ResponseEntity;

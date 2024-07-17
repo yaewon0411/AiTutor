@@ -1,7 +1,7 @@
 package org.example.testController;
 
 import lombok.RequiredArgsConstructor;
-import org.example.openAI.file.FileService;
+import org.example.service.FileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;

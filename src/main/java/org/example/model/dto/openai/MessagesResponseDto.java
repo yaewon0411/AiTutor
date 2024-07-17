@@ -1,14 +1,12 @@
 package org.example.model.dto.openai;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.model.dto.MessageContentDto;
+import org.example.model.dto.assistant.MessageContentDto;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
