@@ -15,7 +15,7 @@
 
 ## 3. 설계 산출
 - [API 명세](https://www.notion.so/API-1e1fced75b94426eaf34e8ca2fd9a53e?pvs=4)
-
+- [Thread와 Run 에러 해결](https://www.notion.so/Thread-Run-c8fab1838dfe42e6aec53e9bc54ffcd4?pvs=4)
 
 
 
