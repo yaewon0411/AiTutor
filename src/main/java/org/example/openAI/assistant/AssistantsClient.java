@@ -58,4 +58,6 @@ public interface AssistantsClient {
     @PostMapping(value = "/audio/speech", produces = "audio/mpeg")
     byte[] createSpeech(@RequestBody AudioRequestDto audioRequestDto);
 
+    @GetMapping("/threads/{threadId}/messages/{messageId}")
+    MessagesResponseDto searchMessage(@PathVariable("threadId")String threadId, @PathVariable("messageId")String messageId);
 }

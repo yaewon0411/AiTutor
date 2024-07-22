@@ -62,10 +62,10 @@ public class TestAssistantController {
         return openAiService.getMessagesList(threadId);
     }
 
-    @PostMapping("/runs/{threadId}")
-    public ResponseEntity<Object> createRuns(@PathVariable("threadId") String threadId, @RequestBody CreateRunsRequestDto createRunsRequestDto) {
-        return openAiService.createRuns(threadId, createRunsRequestDto);
-    }
+//    @PostMapping("/runs/{threadId}")
+//    public ResponseEntity<Object> createRuns(@PathVariable("threadId") String threadId, @RequestBody CreateRunsRequestDto createRunsRequestDto) {
+//        return openAiService.createRuns(threadId, createRunsRequestDto);
+//    }
 
     @GetMapping("/runs/{threadId}")
     public ResponseEntity<Object> getRunList(@PathVariable("threadId") String threadId){

@@ -7,6 +7,7 @@ import org.example.model.dto.assistant.*;
 import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.*;
 import org.example.openAI.assistant.AssistantsClient;
+import org.example.util.CustomDataUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -19,8 +20,11 @@ import org.springframework.http.ResponseEntity;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +32,6 @@ public class OpenAiService {
 
     private final AssistantsClient assistantsClient;
 
-    private final AssistantService assistantService;
     private final FileService fileService;
     private final Logger logger = LoggerFactory.getLogger(OpenAiService.class);
     private String model = "gpt-3.5-turbo";
@@ -56,6 +59,7 @@ public class OpenAiService {
                             openAiAssistantCreateRequestDto.getFileIds()
                     )
             );
+            System.out.println("res = " + res);
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -170,6 +174,20 @@ public class OpenAiService {
         }
     }
 
+    public CompletableFuture<ResponseEntity<Object>> createMessages2(String threadId, MessagesRequestDto messagesRequestDto) {
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                MessagesResponseDto res= assistantsClient.createMessages(
+                        threadId,
+                        messagesRequestDto);
+                return ResponseEntity.ok(res);
+            } catch (Exception e) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        });
+    }
+
     public ResponseEntity<Object> getMessagesList(String threadId) {
         try {
             Object res = assistantsClient.getMessagesList(threadId);
@@ -180,17 +198,35 @@ public class OpenAiService {
     }
 
     public ResponseEntity<Object> createRuns(String threadId, CreateRunsRequestDto createRunsRequestDto) {
-        try {
+
+            try {
             Object res = assistantsClient.createRuns(
                     threadId,
                     new RunsRequestDto(createRunsRequestDto.getAssistantId())
             );
             return ResponseEntity.ok(res);
-        } 
+        }
         catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    //비동기로 구현하는 런 생성...
+    public CompletableFuture<RunsResponseDto> createRuns2(String threadId, CreateRunsRequestDto createRunsRequestDto){
+        return CompletableFuture.supplyAsync(() ->{
+            try{
+                RunsResponseDto runsResponseDto = assistantsClient.createRuns(
+                        threadId,
+                        new RunsRequestDto(createRunsRequestDto.getAssistantId())
+                );
+                return runsResponseDto;
+            }catch (Exception e){
+                System.err.println(e);
+                return new RunsResponseDto();
+            }
+        });
+    }
+
 
     public ResponseEntity<Object> getRunList(String threadId){
         try{
@@ -263,11 +299,13 @@ public class OpenAiService {
 
     public String getAssistantId(ResponseEntity<Object> assistantObject) {
         JSONObject object = new JSONObject(Objects.requireNonNull(assistantObject.getBody()));
+        System.out.println("object.getString(\"id\") = " + object.getString("id"));
         return object.getString("id");
     }
 
     public String getRunId(ResponseEntity<Object> runs) throws IllegalAccessException {
         JSONObject object = new JSONObject(Objects.requireNonNull(runs.getBody()));
+
         return object.getString("id");
     }
 
@@ -464,12 +502,19 @@ public class OpenAiService {
     //런을 계속 실행시켜서 status를 확인하고 이게 completed로 바뀌면
     //메시지 리스트의 해당 메시지 답변 내용을 반환
     public CompletableFuture<String> checkRunStatus(String threadId, String runId){
+
+        Instant startTime = Instant.now();
+
         return CompletableFuture.supplyAsync(() -> assistantsClient.searchRun(threadId, runId))
                 .thenComposeAsync(response -> {
                     String status = response.getStatus().toString();
                     if(status.equals("completed")){
                         return CompletableFuture.supplyAsync(() -> {
                             ResponseEntity<Object> res = getMessagesList(threadId);
+                            Instant endTime = Instant.now();
+                            Duration duration = Duration.between(startTime, endTime);
+                            System.out.println("checkRunStatus 성공 비동기 소요 시간 = " + duration.toMillis());
+
                             return makeChat(res).getAnswer();
                         });
                     } else{
@@ -477,7 +522,45 @@ public class OpenAiService {
                     }
                 });
     }
+    public CompletableFuture<RunsResponseDto> checkRunStatus2(String threadId, String runId){
+        Instant startTime = Instant.now();
+        CompletableFuture<RunsResponseDto> future = new CompletableFuture<>();
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+        ScheduledFuture<?> scheduledFuture = scheduler.scheduleAtFixedRate(() -> {
+            try {
+                RunsResponseDto response = assistantsClient.searchRun(threadId, runId);
+                if ("completed".equals(response.getStatus())) {
+                    future.complete(response);
+                }
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        }, 0, 1, TimeUnit.SECONDS);
+
+        future.whenComplete((response, throwable) -> {
+            scheduledFuture.cancel(true);
+            Instant endTime = Instant.now();
+            Duration duration = Duration.between(startTime, endTime);
+            System.out.println("checkRunStatus2 성공 비동기 소요 시간 " + duration.toMillis() + " milliseconds");
+        });
+        return future;
+    }
+
+    public ChatDto getRunStatusToGetMessage2 (String threadId, String runId) throws ExecutionException, InterruptedException {
+        checkRunStatus2(threadId, runId).get();
+        ResponseEntity<Object> res = getMessagesList(threadId);
+        String answer = makeChat(res).getAnswer();
+
+        ChatDto chatDto = new ChatDto();
+        String ver1 = answer.replaceAll("\r\n", "<br>");
+        String ver2 = ver1.replaceAll("\n", "<br>");
+        chatDto.setAnswer(ver2);
+        return chatDto;
+    }
+
     public CompletableFuture<ChatDto> getRunStatusToGetMessage(String threadId, String runId) {
+
         return checkRunStatus(threadId, runId).thenApplyAsync(response -> {
             ChatDto chatDto = new ChatDto();
             String ver1 = response.replaceAll("\r\n", "<br>");
@@ -486,10 +569,7 @@ public class OpenAiService {
             return chatDto;
         });
     }
-
-
-    public Object chatting(String threadId, getMessageDto getMessageDto) throws IllegalAccessException{
-
+    public ChatDto syncChatting(String threadId, getMessageDto getMessageDto){
         //입력한 파일이 있으면
         if(getMessageDto.getFile() != null){
             ResponseEntity<Object> response = fileService.uploadFile(getMessageDto.getFile());
@@ -497,28 +577,202 @@ public class OpenAiService {
             ArrayList<String> fileIds = new ArrayList<>();
             fileIds.add(fileId);
             //메시지 생성
-            createMessages(threadId, new MessagesRequestDto("user", getMessageDto.getContent(), fileIds));
+            ResponseEntity<Object> messages = createMessages(threadId, new MessagesRequestDto("user",getMessageDto.getContent(), fileIds));
+
+            System.out.println("messages.getBody().toString() = " + messages.getBody().toString());
+
+            //런 생성
+            ResponseEntity<Object> runs = createRuns(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
+            //런 아이디 꺼내기
+            String runId = CustomDataUtil.getDataFromResponseEntityObject(runs, "id");
+            //런 실행 상태 추적
+            ResponseEntity<Object> run = searchRun(threadId, runId);
+
+            JSONObject object = new JSONObject(Objects.requireNonNull(run.getBody()));
+            String status = object.get("status").toString();
+            ChatDto chatDto = new ChatDto();
+            int cnt = 0;
+
+            while(status.equals("in_progress")) {
+                System.out.println("cnt = " + cnt);
+                ResponseEntity<Object> checkForRun = searchRun(threadId, runId);
+                JSONObject objectForCheck = new JSONObject(Objects.requireNonNull(checkForRun.getBody()));
+
+                if (objectForCheck.get("status").toString().equals("completed")) {
+                    //메시지 리스트 조회
+                    ResponseEntity<Object> messagesList = getMessagesList(threadId);
+                    //답변 내보내기
+                    chatDto.setAnswer(makeChat(messagesList).getAnswer());
+                    break;
+                }
+                try{
+                    Thread.sleep(1000);
+                }catch(InterruptedException e){
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                }
+                cnt++;
+            }
+            return chatDto;
+
         }
-        else{
-            //메시지 생성
-            createMessages(threadId, new MessagesRequestDto("user", getMessageDto.getContent()));
-        }
+
+        //메시지 생성
+        ResponseEntity<Object> messages = createMessages(threadId, new MessagesRequestDto("user",getMessageDto.getContent()));
+
+        String messageId = CustomDataUtil.getDataFromResponseEntityObject(messages, "id");
+        System.out.println("메시지 생성 됐나 확인!! : messageId = " + messageId);
+
         //런 생성
         ResponseEntity<Object> runs = createRuns(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
-        //System.out.println("runs.toString() = " + runs.toString());
         //런 아이디 꺼내기
-        String runId = getRunId(runs);
-        //런 실행 상태 추적 후 답변 얻기
-        ChatDto chatDto =  getRunStatusToGetMessage(threadId, runId).join();
+        String runId = CustomDataUtil.getDataFromResponseEntityObject(runs, "id");
+        //런 실행 상태 추적
+        ResponseEntity<Object> run = searchRun(threadId, runId);
 
-        //음성으로 질문한 거라면
-        if(getMessageDto.getIsVoice().equals("true")){
-            System.out.println("음성 인터페이스 전환");
-            String voice = assistantService.getAssistantVoice(getMessageDto.getAssistantId());
-            String speech = createSpeech2(new AudioRequestDto(chatDto.getAnswer()), voice);
-            TutorMessageDto res = new TutorMessageDto(chatDto, speech);
-            return ResponseEntity.ok(res);
+        JSONObject object = new JSONObject(Objects.requireNonNull(run.getBody()));
+        String status = object.get("status").toString();
+        ChatDto chatDto = new ChatDto();
+        int cnt = 0;
+
+        while(status.equals("in_progress")) {
+            System.out.println("cnt = " + cnt);
+            ResponseEntity<Object> checkForRun = searchRun(threadId, runId);
+            JSONObject objectForCheck = new JSONObject(Objects.requireNonNull(checkForRun.getBody()));
+
+            if (objectForCheck.get("status").toString().equals("completed")) {
+                //메시지 리스트 조회
+                ResponseEntity<Object> messagesList = getMessagesList(threadId);
+                //답변 내보내기
+                chatDto.setAnswer(makeChat(messagesList).getAnswer());
+                break;
+            }
+            try{
+                Thread.sleep(1000);
+            }catch(InterruptedException e){
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+            cnt++;
         }
         return chatDto;
     }
+
+
+      // 비동기 체인 : 메시지 생성 + 런 생성 + 런 상태 확인 + 답변 추출
+    public ChatDto asyncChatting2(String threadId, getMessageDto getMessageDto) throws IllegalAccessException, ExecutionException, InterruptedException {
+
+        CompletableFuture<ChatDto> futureChatDto = new CompletableFuture<>();
+        //입력한 파일이 있으면
+        if(getMessageDto.getFile() != null){
+            ResponseEntity<Object> response = fileService.uploadFile(getMessageDto.getFile());
+            String fileId = fileService.getFileId(response);
+            ArrayList<String> fileIds = new ArrayList<>();
+            fileIds.add(fileId);
+            //메시지 생성
+            createMessages2(threadId, new MessagesRequestDto("user", getMessageDto.getContent(), fileIds)).thenApply(
+                    responseWithFile -> {
+                        ResponseEntity<Object> runs = createRuns(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
+                        String runId = CustomDataUtil.getDataFromResponseEntityObject(runs, "id");
+                        try {
+                            ChatDto chatDto = getRunStatusToGetMessage2(threadId, runId);
+                            futureChatDto.complete(chatDto);
+                        } catch (ExecutionException | InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return null;
+                    }
+            ).exceptionally(e -> {
+                System.err.println("어시스턴트 답변 추출 과정에서 에러 발생: " + e.getMessage());
+                return null;
+            });
+        }
+        else{
+            //메시지 생성
+            System.out.println("질문한 내용 : "+getMessageDto.getContent());
+            createMessages2(threadId, new MessagesRequestDto("user", getMessageDto.getContent())).thenApply(
+                    responseWithoutFile -> {
+                        ResponseEntity<Object> runs = createRuns(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
+                        String runId = CustomDataUtil.getDataFromResponseEntityObject(runs, "id");
+                        try {
+                            ChatDto chatDto = getRunStatusToGetMessage2(threadId, runId);
+                            futureChatDto.complete(chatDto);
+                        } catch (ExecutionException | InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return null;
+                    }
+            ).exceptionally(e -> {
+                System.err.println("어시스턴트 답변 추출 과정에서 에러 발생: " + e.getMessage());
+                return null;
+            });
+        }
+
+
+        //런 생성
+//        ResponseEntity<Object> runs = createRuns(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
+//
+//        //런 아이디 꺼내기
+//        String runId = CustomDataUtil.getDataFromResponseEntityObject(runs, "id");
+//
+//        //런 실행 상태 추적 후 답변 얻기
+//        //ChatDto chatDto =  getRunStatusToGetMessage(threadId, runId).join();
+//        ChatDto chatDto =  getRunStatusToGetMessage2(threadId, runId);
+
+        ChatDto chatDto = futureChatDto.get();
+        return chatDto;
+    }
+
+    //비동기 체인 : 런 생성 + 런 상태 확인 + 답변 추출
+    public CompletableFuture<ChatDto> asyncChatting(String threadId, getMessageDto getMessageDto) throws ExecutionException, InterruptedException {
+
+        ChatDto chatDto = null;
+        //입력한 파일이 있으면
+        if(getMessageDto.getFile() != null){
+            ResponseEntity<Object> response = fileService.uploadFile(getMessageDto.getFile());
+            String fileId = fileService.getFileId(response);
+            ArrayList<String> fileIds = new ArrayList<>();
+            fileIds.add(fileId);
+            //메시지 생성
+            System.out.println("질문한 내용 : "+getMessageDto.getContent());
+
+            // 메시지 생성
+            return CompletableFuture.supplyAsync(() -> createMessages2(threadId, new MessagesRequestDto("user", getMessageDto.getContent(), fileIds)))
+                    .thenApply(responseWithFile -> { return createRuns2(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
+                    })
+                    .thenCompose(runResponseFuture -> runResponseFuture)
+                    .thenApply(runResponse -> {
+                        // 런 생성 후 런 ID 사용
+                        String runId = runResponse.getId();
+                        try {
+                            return getRunStatusToGetMessage2(threadId, runId);
+                        } catch (ExecutionException | InterruptedException e) {
+                            System.err.println("런 상태 추적에서 에러 발생 : "+e);
+                            throw new RuntimeException(e);
+                        }
+                    });
+        }
+        else {
+            //메시지 생성
+            System.out.println("질문한 내용 : " + getMessageDto.getContent());
+
+            // 메시지 생성
+            return CompletableFuture.supplyAsync(() -> createMessages2(threadId, new MessagesRequestDto("user", getMessageDto.getContent())))
+                    .thenApply(response -> { return createRuns2(threadId, new CreateRunsRequestDto(getMessageDto.getAssistantId()));
+                    })
+                    .thenCompose(Function.identity())
+                    .thenApply(runResponse -> {
+                        // 런 생성 후 런 ID 사용
+                        String runId = runResponse.getId();
+                        try {
+                            return getRunStatusToGetMessage2(threadId, runId);
+                        } catch (ExecutionException | InterruptedException e) {
+                            System.err.println("런 상태 추적에서 에러 발생 : "+e);
+                            throw new RuntimeException(e);
+                        }
+                    });
+        }
+    }
+
+
 }

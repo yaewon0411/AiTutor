@@ -8,6 +8,7 @@ import org.example.domain.assistantEnum.Voice;
 import org.example.model.dto.assistant.*;
 import org.example.domain.assistant.Assistant;
 import org.example.domain.assistant.AssistantRepository;
+import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.OpenAiAssistantCreateRequestDto;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,14 +37,11 @@ public class AssistantService {
 
     @Transactional(readOnly = true)
     public List<ShowHomeDto> findAll(){
-        List<Assistant> all = assistantRepository.findAll();
-        List<ShowHomeDto> res = new ArrayList<>();
-        for (Assistant assistant : all) {
-            ShowHomeDto dto = new ShowHomeDto(assistant.getName(), assistant.getImg(), assistant.getId());
-            res.add(dto);
-        }
-        return res;
+        return assistantRepository.findAll().stream()
+                .map(assistant -> new ShowHomeDto(assistant.getName(), assistant.getImg(), assistant.getId()))
+                .collect(Collectors.toList());
     }
+
     @Transactional(readOnly = true)
     public Assistant findById(String assistantId){
         Optional<Assistant> findOne = assistantRepository.findById(assistantId);
@@ -96,6 +95,12 @@ public class AssistantService {
         if(voice.toString().equals("Female")) return "shimmer";
         else return "onyx";
     }
+    public TutorMessageDto voiceChatting(getMessageDto getMessageDto, ChatDto chatDto) { //음성으로 질문한 거라면
+        System.out.println("음성 인터페이스 전환");
+        String voice = getAssistantVoice(getMessageDto.getAssistantId());
+        String speech = openAiService.createSpeech2(new AudioRequestDto(chatDto.getAnswer()), voice);
+        return new TutorMessageDto(chatDto, speech);
+    }
 
     public void modifyAssistantImg(String assistantId, MultipartFile file) throws MalformedURLException {
 
@@ -142,14 +147,14 @@ public class AssistantService {
         findOne.setHasFileFalse();
     }
 
+    //TODO -> 일단 전체 엔티티 들고와서 DTO로 매핑해서 반환하는 거 성능 테스트 하고
+    //TODO -> 그 뒤에, 레퍼지토리에서 바로 DTO로 매핑해서 가져오는 거 성능 테스트
     public List<ShowHomeDto> searchByKeyword(String keyword){
         List<Assistant> assistants = assistantRepository.searchByKeyword(keyword);
-        List<ShowHomeDto> showHomeDtoList = new ArrayList<>();
-        for (Assistant assistant : assistants) {
-            ShowHomeDto searchDto = new ShowHomeDto(assistant.getName(), assistant.getImg(),assistant.getId());
-            showHomeDtoList.add(searchDto);
-        }
-        return showHomeDtoList;
+
+        return assistants.stream()
+                        .map(assistant -> new ShowHomeDto(assistant.getName(), assistant.getImg(), assistant.getId()))
+                .collect(Collectors.toList());
     }
 
 
@@ -293,6 +298,7 @@ public class AssistantService {
         OpenAiAssistantCreateRequestDto AiAssistantCreateDto = new OpenAiAssistantCreateRequestDto();
         boolean hasFile = false;
 
+
         //등록된 파일 있으면 먼저 서버에 저장
         if(assistantCreateRequestDto.getFile1() != null){
             hasFile = true;
@@ -351,12 +357,17 @@ public class AssistantService {
 
 
     public void save(ResponseEntity<Object> assistantObject, AssistantCreateRequestDto assistantCreateRequestDto) {
+
+
         String assistantId = openAiService.getAssistantId(assistantObject);
+        System.out.println("openAI에 저장된 어시스턴트 아이디!!!! = " + assistantId);
 
         //이미지 버킷에 저장하고 저장된 경로 반환
         String imgUrl = s3Service.uploadImage(assistantCreateRequestDto.getImgFile());
 
         boolean hasFile = assistantCreateRequestDto.getFile1() != null?true : false;
+
+
 
         //db에 어시스턴트 insert
         Assistant.AssistantBuilder builder =

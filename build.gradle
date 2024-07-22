@@ -22,6 +22,7 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'com.squareup.okhttp3:okhttp:4.9.0' // 예시로 OkHttp 사용
     implementation 'dev.ai4j:openai4j:0.12.1'

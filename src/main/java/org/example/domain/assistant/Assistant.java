@@ -11,7 +11,6 @@ import org.example.domain.assistantEnum.*;
 @Builder
 public class Assistant {
     @Id @Column(name = "assistant_id")
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private String id;
 
     @Column(name="assistant_name")

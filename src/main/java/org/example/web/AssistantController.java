@@ -2,16 +2,20 @@ package org.example.web;
 
 import lombok.RequiredArgsConstructor;
 import org.example.model.dto.assistant.*;
+import org.example.model.dto.audio.AudioRequestDto;
 import org.example.model.dto.openai.*;
 import org.example.service.OpenAiService;
 import org.example.service.FileService;
 import org.example.service.AssistantService;
 import org.example.service.S3Service;
 import org.json.JSONException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.net.MalformedURLException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 
 @RestController
@@ -21,9 +25,7 @@ import java.net.MalformedURLException;
 public class AssistantController {
 
     private final OpenAiService openAiService;
-    private final FileService fileService;
     private final AssistantService assistantService;
-    private final S3Service s3Service;
 
     
     //홈 화면 - 어시스턴트 리스트
@@ -73,9 +75,26 @@ public class AssistantController {
     }
     //메시지 보내고 답변 받기
     @PostMapping("/{threadId}/chat")
-    public ResponseEntity<Object> getMessage(@PathVariable("threadId") String threadId, @ModelAttribute getMessageDto getMessageDto
-    ) throws IllegalAccessException{
-        return ResponseEntity.ok(openAiService.chatting(threadId, getMessageDto));
+    public CompletableFuture<ResponseEntity<ChatDto>> getMessage(@PathVariable("threadId") String threadId, @ModelAttribute getMessageDto getMessageDto
+    ) throws ExecutionException, InterruptedException {
+
+        return openAiService.asyncChatting(threadId, getMessageDto)
+                .thenApply(ResponseEntity::ok)
+                .exceptionally(e -> {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ChatDto(e.getMessage()));
+                }); //비동기 1
+
+
+
+        //ChatDto chatDto = openAiService.asyncChatting2(threadId, getMessageDto);// 비동기 2
+        //ChatDto chatDto = openAiService.syncChatting(threadId, getMessageDto); //동기로 했을 때
+
+
+//        if(getMessageDto.getIsVoice().equals("true")) {
+//            return ResponseEntity.ok(assistantService.voiceChatting(getMessageDto, chatDto));
+//        }
+//        return ResponseEntity.ok(chatDto);
     }
 
     //채팅방 나갈 때 쓰레드 제거

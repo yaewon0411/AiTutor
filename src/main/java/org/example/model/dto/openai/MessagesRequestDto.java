@@ -27,10 +27,6 @@ public class MessagesRequestDto {
         this.file_ids = fileIds;
     }
 
-    public MessagesRequestDto(String content, ArrayList<String> fileIds) {
-        this.content = content;
-        this.file_ids = fileIds;
-    }
     public MessagesRequestDto(String role, String content){
         this.role = role;
         this.content = content;
